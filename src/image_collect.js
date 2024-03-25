@@ -12,7 +12,7 @@ var ImageCollect = /** @class */ (function () {
          */
         this.imageContextInfos = new Map();
     }
-    ImageCollect.prototype.query = function (key, url, trim) {
+    ImageCollect.prototype.query = function (key, url, trim, logTrim) {
         var _this = this;
         var info = this.imageContextInfos.get(url);
         if (info) {
@@ -42,7 +42,7 @@ var ImageCollect = /** @class */ (function () {
                             };
                             _this.imageContextInfos.set(url, result);
                             resolve(result);
-                        });
+                        }, logTrim);
                     }
                     else if (url.endsWith(".jpg")) {
                         fs.readFile(url, function (err, jpegData) {

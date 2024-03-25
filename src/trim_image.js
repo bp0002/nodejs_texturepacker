@@ -2,7 +2,7 @@
 exports.__esModule = true;
 exports.trimImage = void 0;
 var getPixels = require("get-pixels");
-function trimImage(filename, cb) {
+function trimImage(filename, cb, log) {
     var crop = {
         top: true,
         right: true,
@@ -68,7 +68,9 @@ function trimImage(filename, cb) {
             cb('Crop coordinates overflow:', null);
         }
         else {
-            console.log("Trim: " + filename + " right " + cropData.right + " bottom " + cropData.bottom + " left " + cropData.left + " top " + cropData.top);
+            if (log) {
+                console.log("Trim: " + filename + " right " + cropData.right + " bottom " + cropData.bottom + " left " + cropData.left + " top " + cropData.top);
+            }
             var data = pixels.hi(cropData.right, cropData.bottom).lo(cropData.left, cropData.top);
             cb(null, [data.data, cropData, w, h]);
         }

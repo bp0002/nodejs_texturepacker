@@ -126,9 +126,11 @@ var TexturePacker = /** @class */ (function () {
             var promise = [];
             files.forEach(function (file) {
                 var path = "" + file[0] + file[1];
-                console.log("Collecting: " + path);
+                if (task.logCollect) {
+                    console.log("Collecting: " + path);
+                }
                 if (path.endsWith(".png") || path.endsWith(".jpg")) {
-                    promise.push(imageCollect.query(path, path, task.trim));
+                    promise.push(imageCollect.query(path, path, task.trim, task.logTrim));
                 }
             });
             return Promise.all(promise).then(function () {
@@ -143,12 +145,12 @@ var TexturePacker = /** @class */ (function () {
         var options = {
             smart: true,
             pot: false,
-            square: false,
-            allowRotation: false,
-            tag: true,
-            border: 1
+            square: task.square,
+            allowRotation: task.rotation,
+            tag: task.useTag,
+            border: task.border == undefined ? 1 : task.border
         }; // Set packing options
-        var packer = new maxrects_packer_1.MaxRectsPacker(4096, 4096, 1, options);
+        var packer = new maxrects_packer_1.MaxRectsPacker(task.maxWidth, task.maxHeight, task.padding, options);
         var inputs = [];
         var saveName = task.name;
         images.forEach(function (info, key) {
@@ -181,26 +183,47 @@ var TexturePacker = /** @class */ (function () {
         packer.next(); // Start a new packer bin
         var idx = 0;
         var packerInfoList = [];
-        if (packer.bins.length == 1 && anime) {
-            var packerinfo_1 = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, savePath + saveName + ".png", task.trim);
-            packerinfo_1.animations = {};
-            this.animations.forEach(function (element, key) {
-                var animation = [];
-                packerinfo_1.animations[key] = animation;
-                element.imageContextInfos.forEach(function (val, url) {
-                    var name = url.replace(srcPath, "");
-                    animation.push(name);
+        if (task.subFolders) {
+            if (packer.bins.length == 1 && anime) {
+                var packerinfo_1 = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, savePath + saveName + ".png", task.trim);
+                packerinfo_1.animations = {};
+                this.animations.forEach(function (element, key) {
+                    var animation = [];
+                    packerinfo_1.animations[key] = animation;
+                    element.imageContextInfos.forEach(function (val, url) {
+                        var name = url.replace(srcPath, "");
+                        animation.push(name);
+                    });
+                    animation.sort();
                 });
-                animation.sort();
-            });
-            packerInfoList.push(packerinfo_1);
+                packerInfoList.push(packerinfo_1);
+            }
+            else {
+                console.error("Task " + task.name + " Can't Cobine To One Image !!!");
+            }
         }
         else {
-            packer.bins.forEach(function (bin) {
-                var packerinfo = maxrectspacker_to_texturepacker(bin, srcPath, savePath + saveName + "_" + idx + ".png", task.trim);
-                packerInfoList.push(packerinfo);
-                idx++;
-            });
+            if (packer.bins.length == 1 && anime) {
+                var packerinfo_2 = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, savePath + saveName + ".png", task.trim);
+                packerinfo_2.animations = {};
+                this.animations.forEach(function (element, key) {
+                    var animation = [];
+                    packerinfo_2.animations[key] = animation;
+                    element.imageContextInfos.forEach(function (val, url) {
+                        var name = url.replace(srcPath, "");
+                        animation.push(name);
+                    });
+                    animation.sort();
+                });
+                packerInfoList.push(packerinfo_2);
+            }
+            else {
+                packer.bins.forEach(function (bin) {
+                    var packerinfo = maxrectspacker_to_texturepacker(bin, srcPath, savePath + saveName + "_" + idx + ".png", task.trim);
+                    packerInfoList.push(packerinfo);
+                    idx++;
+                });
+            }
         }
         return packerInfoList;
     };

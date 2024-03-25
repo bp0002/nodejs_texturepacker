@@ -136,10 +136,12 @@ export class TexturePacker {
             let promise = [];
             files.forEach((file) => {
                 let path = `${file[0]}${file[1]}`;
-                console.log(`Collecting: ${path}`);
+                if (task.logCollect) {
+                    console.log(`Collecting: ${path}`);
+                }
                 if (path.endsWith(".png") || path.endsWith(".jpg")) {
                     promise.push(
-                        imageCollect.query(path, path, task.trim)
+                        imageCollect.query(path, path, task.trim, task.logTrim)
                     );
                 }
             });
@@ -157,12 +159,12 @@ export class TexturePacker {
         const options: IOption = {
             smart: true,
             pot: false,
-            square: false,
-            allowRotation: false,
-            tag: true,
-            border: 1
+            square: task.square,
+            allowRotation: task.rotation,
+            tag: task.useTag,
+            border: task.border == undefined ? 1 : task.border,
         }; // Set packing options
-        let packer = new MaxRectsPacker<ICustomRect>(4096, 4096, 1, options);
+        let packer = new MaxRectsPacker<ICustomRect>(task.maxWidth, task.maxHeight, task.padding, options);
         let inputs: ICustomRect[] = [];
         let saveName = task.name;
 
@@ -197,25 +199,44 @@ export class TexturePacker {
         packer.next(); // Start a new packer bin
         let idx = 0;
         let packerInfoList: ITexturePackAtlas[] = [];
-        if (packer.bins.length == 1 && anime) {
-            let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, `${savePath + saveName}.png`, task.trim);
-            packerinfo.animations = {};
-            this.animations.forEach((element, key) => {
-                let animation = [];
-                packerinfo.animations[key] = animation;
-                element.imageContextInfos.forEach((val, url) => {
-                    let name = url.replace(srcPath, "");
-                    animation.push(name);
+        if (task.subFolders) {
+            if (packer.bins.length == 1 && anime) {
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, `${savePath + saveName}.png`, task.trim);
+                packerinfo.animations = {};
+                this.animations.forEach((element, key) => {
+                    let animation = [];
+                    packerinfo.animations[key] = animation;
+                    element.imageContextInfos.forEach((val, url) => {
+                        let name = url.replace(srcPath, "");
+                        animation.push(name);
+                    });
+                    animation.sort();
                 });
-                animation.sort();
-            });
-            packerInfoList.push(packerinfo);
-        } else {
-            packer.bins.forEach((bin: Bin<ICustomRect>) => {
-                let packerinfo = maxrectspacker_to_texturepacker(bin, srcPath, `${savePath + saveName}_${idx}.png`, task.trim);
                 packerInfoList.push(packerinfo);
-                idx++;
-            });
+            } else {
+                console.error(`Image Pack Error: Task ${task.name} Can't Cobine To One Image !!!`);
+            }
+        } else {
+            if (packer.bins.length == 1 && anime) {
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, `${savePath + saveName}.png`, task.trim);
+                packerinfo.animations = {};
+                this.animations.forEach((element, key) => {
+                    let animation = [];
+                    packerinfo.animations[key] = animation;
+                    element.imageContextInfos.forEach((val, url) => {
+                        let name = url.replace(srcPath, "");
+                        animation.push(name);
+                    });
+                    animation.sort();
+                });
+                packerInfoList.push(packerinfo);
+            } else {
+                packer.bins.forEach((bin: Bin<ICustomRect>) => {
+                    let packerinfo = maxrectspacker_to_texturepacker(bin, srcPath, `${savePath + saveName}_${idx}.png`, task.trim);
+                    packerInfoList.push(packerinfo);
+                    idx++;
+                });
+            }
         }
         return packerInfoList;
     }

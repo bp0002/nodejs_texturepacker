@@ -1,3 +1,6 @@
+# 该库与项目同文件夹时
+* 项目根目录下创建 texturepacker.json , 声明任务列表
+```typescript
 export interface ITexturePackTask {
     /**
      * 是否裁剪透明像素
@@ -63,7 +66,7 @@ export interface ITexturePackTask {
      */
     "logMergy": boolean,
     /**
-     * 输出: 保存的文件名
+     * 输出: 保存的文件名, 当为设置 subFolders 时, 内部认为必要时合并到多张输出,输出名称将有后缀 _{n}， Example: a_0.png, a_1.png ...
      */
     "name": string,
     /**
@@ -85,3 +88,31 @@ export interface ITexturePackTask {
         "subFolderNameAsAnimName": boolean
     }
 }
+```
+```json
+[
+    {
+        "srcDir": "src/app/scene_res/res/scene_effect/",
+        "target": "src/assets/",
+        "name": "scene_effect",
+        "trim": true,
+        "rotation": true,
+        "alignSize": 4,
+        "border": 1,
+        "padding": 1,
+        "maxWidth": 2048,
+        "maxHeight": 2048,
+        "active": true,
+        "logTrim": false,
+        "logCollect": false,
+        "logMergy": false,
+        "subFolders": {
+            "subFolderNameAsAnimName": true
+        }
+    }
+]
+```
+* 运行
+```cmd
+tsc ../texturepacker/src/index.ts & node ../texturepacker/src/index.js texturepacker.json
+```

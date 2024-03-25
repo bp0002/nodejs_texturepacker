@@ -13,14 +13,15 @@ function mergyImages(list, mergyWidth, mergyHeight, savePath) {
     });
 }
 exports.mergyImages = mergyImages;
-function mergyByTexturePacker(imageMap, config, srcPath, savePath) {
+function mergyByTexturePacker(imageMap, config, srcPath, savePath, alignSize, log) {
+    if (log === void 0) { log = false; }
     // console.log(`mergyByTexturePacker: ${config.image} - ${config.meta.size.w} - ${config.meta.size.h} - savePath: ${savePath}`);
     // return Promise.resolve(null);
     return new Promise(function (resolve, reject) {
         var width = config.meta.size.w;
         var height = config.meta.size.h;
-        width = Math.ceil(width / 4) * 4;
-        height = Math.ceil(height / 4) * 4;
+        width = Math.ceil(width / alignSize) * alignSize;
+        height = Math.ceil(height / alignSize) * alignSize;
         config.meta.size.w = width;
         config.meta.size.h = height;
         // let picture = images.createImage(width, height);
@@ -38,7 +39,9 @@ function mergyByTexturePacker(imageMap, config, srcPath, savePath) {
                 var oy = frame.frame.y;
                 var rw = frame.frame.w;
                 var rh = frame.frame.h;
-                console.error("Copy Image: " + image.url);
+                if (log) {
+                    console.error("Mergy Image: " + image.url);
+                }
                 if (image.url.endsWith(".jpg")) {
                     if (image.data.length == sw * sh * 3) {
                         if (frame.rotated) {

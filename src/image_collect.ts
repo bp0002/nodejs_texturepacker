@@ -14,7 +14,7 @@ export class ImageCollect implements IImageInfoRecorder {
     ) {
 
     }
-    query(key: string, url: string, trim?: boolean): Promise<ImageInfo> {
+    query(key: string, url: string, trim?: boolean, logTrim?: boolean): Promise<ImageInfo> {
         let info = this.imageContextInfos.get(url);
         if (info) {
             return Promise.resolve(info);
@@ -41,7 +41,7 @@ export class ImageCollect implements IImageInfoRecorder {
                             };
                             this.imageContextInfos.set(url, result);
                             resolve(result);
-                        });
+                        }, logTrim);
                     } else if (url.endsWith(".jpg")) {
                         fs.readFile(url, (err, jpegData) => {
                             if (jpegData) {

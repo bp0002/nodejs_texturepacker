@@ -16,14 +16,14 @@ export function mergyImages(list: ICustomRect[], mergyWidth: number, mergyHeight
     });
 }
 
-export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: ITexturePackAtlas, srcPath: string, savePath: string) {
+export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: ITexturePackAtlas, srcPath: string, savePath: string, alignSize: number, log: boolean = false) {
     // console.log(`mergyByTexturePacker: ${config.image} - ${config.meta.size.w} - ${config.meta.size.h} - savePath: ${savePath}`);
     // return Promise.resolve(null);
     return new Promise((resolve, reject) => {
         let width = config.meta.size.w;
         let height = config.meta.size.h;
-        width = Math.ceil(width / 4) * 4;
-        height = Math.ceil(height / 4) * 4;
+        width = Math.ceil(width / alignSize) * alignSize;
+        height = Math.ceil(height / alignSize) * alignSize;
         config.meta.size.w = width;
         config.meta.size.h = height;
 
@@ -44,7 +44,9 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                 let oy = frame.frame.y;
                 let rw = frame.frame.w;
                 let rh = frame.frame.h;
-                console.error(`Copy Image: ${image.url}`);
+                if (log) {
+                    console.error(`Mergy Image: ${image.url}`);
+                }
                 if (image.url.endsWith(".jpg")) {
                     if (image.data.length == sw * sh * 3) {
                         if (frame.rotated) {
