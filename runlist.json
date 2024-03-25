@@ -1,0 +1,10 @@
+[
+    ["./item/cell_id.json", "./item/mergy.json"]
+    , ["./boom/cell_id.json", "./boom/mergy.json"]
+    , ["./base/cell_id.json", "./base/mergy.json"]
+    , ["./bg/cell_id.json", "./bg/mergy.json"]
+    , ["./bg1/cell_id.json", "./bg1/mergy.json"]
+    , ["./bg2/cell_id.json", "./bg2/mergy.json"]
+    , ["./number/cell_id.json", "./number/mergy.json"]
+    , ["./domain/cell_id.json", "./domain/mergy.json"]
+]
