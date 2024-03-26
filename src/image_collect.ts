@@ -85,6 +85,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                     mode: 0,
                                     fileSize: jpegData.byteLength,
                                     modifyTime: 0,
+                                    data: rawImageData.data,
                                 };
                                 this.imageContextInfos.set(url, result);
                                 resolve(result);
@@ -105,6 +106,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                     mode: 0,
                                     fileSize: jpegData.byteLength,
                                     modifyTime: 0,
+                                    data: rawImageData.data,
                                 };
                                 this.imageContextInfos.set(url, result);
                                 resolve(result);
