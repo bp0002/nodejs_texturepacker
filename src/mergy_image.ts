@@ -53,7 +53,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                             for (let i = 0; i < rh; i++) {
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
-                                    let ridx = (oy + j) * width + (ox + (rw - i));
+                                    let ridx = (oy + j) * width + (ox + (rh - i));
                                     data[ridx * 4 + 0] = image.data[idx * 3 + 0];
                                     data[ridx * 4 + 1] = image.data[idx * 3 + 1];
                                     data[ridx * 4 + 2] = image.data[idx * 3 + 2];
@@ -77,7 +77,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                             for (let i = 0; i < rh; i++) {
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
-                                    let ridx = (oy + j) * width + (ox + (rw - i));
+                                    let ridx = (oy + j) * width + (ox + (rh - i));
                                     data[ridx * 4 + 0] = image.data[idx * 4 + 0];
                                     data[ridx * 4 + 1] = image.data[idx * 4 + 1];
                                     data[ridx * 4 + 2] = image.data[idx * 4 + 2];
@@ -103,10 +103,10 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                 } else if (image.url.endsWith(".png")) {
                     if (image.data.length == sw * sh * 4) {
                         if (frame.rotated) {
-                            for (let i = 0; i < rh; i++) {
-                                for (let j = 0; j < rw; j++) {
-                                    let idx = (dy + i) * sw + (dx + j);
-                                    let ridx = (oy + j) * width + (ox + (rw - i));
+                            for (let row = 0; row < rh; row++) {
+                                for (let col = 0; col < rw; col++) {
+                                    let idx = (dy + row) * sw + (dx + col);
+                                    let ridx = (oy + col) * width + (ox + (rh - row));
                                     data[ridx * 4 + 0] = image.data[idx * 4 + 0];
                                     data[ridx * 4 + 1] = image.data[idx * 4 + 1];
                                     data[ridx * 4 + 2] = image.data[idx * 4 + 2];

@@ -57,7 +57,7 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: 
         let key = element.key.replace(urlClip, "");
         result.frames[key] = {
             frame: { x: element.x, y: element.y, w: element.width, h: element.height },
-            rotated: !!element.rot,
+            rotated: element.rot == true,
             trimmed: trimmed,
             spriteSourceSize: element.spriteSourceSize,
             sourceSize: element.sourceSize
@@ -73,7 +73,7 @@ export class TexturePacker {
         let path = formatUrl(configPath, task.srcDir);
         console.log(`srcDir: ${path}`);
         console.log(`target: ${formatUrl(configPath, task.target)}`);
-        console.log(`Name: ${task.name} }`);
+        console.log(`Name: ${task.name}`);
     }
 
     public get srcPath() {
@@ -214,7 +214,7 @@ export class TexturePacker {
                 });
                 packerInfoList.push(packerinfo);
             } else {
-                console.error(`Image Pack Error: Task ${task.name} Can't Cobine To One Image !!!`);
+                console.error(`Image Pack Error: Task ${task.name} Can't Combine To One Image !!!`);
             }
         } else {
             if (packer.bins.length == 1 && anime) {
