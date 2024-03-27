@@ -1,4 +1,6 @@
 
+import * as fs from "fs";
+
 export function formatUrl(rootUrl: string, url: string | undefined) {
     if (url) {
         const rootList = rootUrl.split('/');
@@ -18,5 +20,21 @@ export function formatUrl(rootUrl: string, url: string | undefined) {
         }
     } else {
         return rootUrl + url;
+    }
+}
+
+export function makeDir(path: string) {
+    let match = path.match(/(.*\/)/);
+    if (match) {
+        let list = match[0].split("\/");
+        let dir = "";
+        list.forEach((item) => {
+            if (item != "") {
+                dir += item + "\/";
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir);
+                }
+            }
+        });
     }
 }

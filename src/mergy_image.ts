@@ -54,10 +54,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
                                     let ridx = (oy + j) * width + (ox + (rh - i));
-                                    data[ridx * 4 + 0] = image.data[idx * 3 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 3 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 3 + 2];
-                                    data[ridx * 4 + 3] = 255;
+                                    let r = image.data[idx * 3 + 0];
+                                    let g = image.data[idx * 3 + 1];
+                                    let b = image.data[idx * 3 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    data[ridx * 4 + 3] = 255; //(r + b + g < 1) ? 0 : 255;
                                 }
                             }
                         } else {
@@ -65,10 +68,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
                                     let ridx = (oy + i) * width + (ox + j);
-                                    data[ridx * 4 + 0] = image.data[idx * 3 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 3 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 3 + 2];
-                                    data[ridx * 4 + 3] = 255;
+                                    let r = image.data[idx * 3 + 0];
+                                    let g = image.data[idx * 3 + 1];
+                                    let b = image.data[idx * 3 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    data[ridx * 4 + 3] = 255;//(r + b + g < 1) ? 0 : 255;
                                 }
                             }
                         }
@@ -78,9 +84,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
                                     let ridx = (oy + j) * width + (ox + (rh - i));
-                                    data[ridx * 4 + 0] = image.data[idx * 4 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 4 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 4 + 2];
+                                    let r = image.data[idx * 4 + 0];
+                                    let g = image.data[idx * 4 + 1];
+                                    let b = image.data[idx * 4 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    // data[ridx * 4 + 3] = (r + b + g < 1) ? 0 : image.data[idx * 4 + 3];
                                     data[ridx * 4 + 3] = image.data[idx * 4 + 3];
                                 }
                             }
@@ -89,9 +99,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
                                     let ridx = (oy + i) * width + (ox + j);
-                                    data[ridx * 4 + 0] = image.data[idx * 4 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 4 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 4 + 2];
+                                    let r = image.data[idx * 4 + 0];
+                                    let g = image.data[idx * 4 + 1];
+                                    let b = image.data[idx * 4 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    // data[ridx * 4 + 3] = (r + b + g < 1) ? 0 : image.data[idx * 4 + 3];
                                     data[ridx * 4 + 3] = image.data[idx * 4 + 3];
                                 }
                             }
@@ -107,9 +121,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let col = 0; col < rw; col++) {
                                     let idx = (dy + row) * sw + (dx + col);
                                     let ridx = (oy + col) * width + (ox + (rh - row));
-                                    data[ridx * 4 + 0] = image.data[idx * 4 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 4 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 4 + 2];
+                                    let r = image.data[idx * 4 + 0];
+                                    let g = image.data[idx * 4 + 1];
+                                    let b = image.data[idx * 4 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    // data[ridx * 4 + 3] = (r + b + g < 1) ? 0 : image.data[idx * 4 + 3];
                                     data[ridx * 4 + 3] = image.data[idx * 4 + 3];
                                 }
                             }
@@ -118,9 +136,13 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                                 for (let col = 0; col < rw; col++) {
                                     let idx = (dy + row) * sw + (dx + col);
                                     let ridx = (oy + row) * width + (ox + col);
-                                    data[ridx * 4 + 0] = image.data[idx * 4 + 0];
-                                    data[ridx * 4 + 1] = image.data[idx * 4 + 1];
-                                    data[ridx * 4 + 2] = image.data[idx * 4 + 2];
+                                    let r = image.data[idx * 4 + 0];
+                                    let g = image.data[idx * 4 + 1];
+                                    let b = image.data[idx * 4 + 2];
+                                    data[ridx * 4 + 0] = r;
+                                    data[ridx * 4 + 1] = g;
+                                    data[ridx * 4 + 2] = b;
+                                    // data[ridx * 4 + 3] = (r + b + g < 1) ? 0 : image.data[idx * 4 + 3];
                                     data[ridx * 4 + 3] = image.data[idx * 4 + 3];
                                 }
                             }

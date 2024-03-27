@@ -45,7 +45,7 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: 
         meta: {
             app: "pi_texturepacker",
             version: "",
-            image: "",
+            image: image.replace(/(.*\/)/, ""),
             format: "",
             size: { w: bin.width, h: bin.height },
             smartupdate: "",
@@ -109,7 +109,7 @@ export class TexturePacker {
                 });
 
                 return Promise.all(promise).then(() => {
-                    let atlas = this.pack(task, this.animations, srcPath, savePath, true);
+                    let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, true);
                     return [atlas, map];
                 });
             });
@@ -119,7 +119,7 @@ export class TexturePacker {
                 imageCollect.imageContextInfos.forEach((element, key) => {
                     map.set(key, element);
                 });
-                let atlas = this.pack(task, this.animations, srcPath, savePath, false);
+                let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, false);
                 return [atlas, map];
             });
         }
@@ -155,10 +155,10 @@ export class TexturePacker {
         });
     }
 
-    private pack(task: ITexturePackTask, images: Map<string, ImageCollect>, srcPath: string, savePath: string, anime: boolean) {
+    public static pack(task: ITexturePackTask, images: Map<string, ImageCollect>, urlClipPath: string, savePath: string, animations: Map<string, ImageCollect>, anime: boolean) {
         const options: IOption = {
             smart: true,
-            pot: false,
+            pot: task.pot,
             square: task.square,
             allowRotation: task.rotation,
             tag: task.useTag,
@@ -201,13 +201,13 @@ export class TexturePacker {
         let packerInfoList: ITexturePackAtlas[] = [];
         if (task.subFolders) {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, `${savePath + saveName}.png`, task.trim);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], urlClipPath, `${savePath + saveName}.png`, task.trim);
                 packerinfo.animations = {};
-                this.animations.forEach((element, key) => {
+                animations.forEach((element, key) => {
                     let animation = [];
                     packerinfo.animations[key] = animation;
                     element.imageContextInfos.forEach((val, url) => {
-                        let name = url.replace(srcPath, "");
+                        let name = url.replace(urlClipPath, "");
                         animation.push(name);
                     });
                     animation.sort();
@@ -218,13 +218,13 @@ export class TexturePacker {
             }
         } else {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], srcPath, `${savePath + saveName}.png`, task.trim);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], urlClipPath, `${savePath + saveName}.png`, task.trim);
                 packerinfo.animations = {};
-                this.animations.forEach((element, key) => {
+                animations.forEach((element, key) => {
                     let animation = [];
                     packerinfo.animations[key] = animation;
                     element.imageContextInfos.forEach((val, url) => {
-                        let name = url.replace(srcPath, "");
+                        let name = url.replace(urlClipPath, "");
                         animation.push(name);
                     });
                     animation.sort();
@@ -232,7 +232,7 @@ export class TexturePacker {
                 packerInfoList.push(packerinfo);
             } else {
                 packer.bins.forEach((bin: Bin<ICustomRect>) => {
-                    let packerinfo = maxrectspacker_to_texturepacker(bin, srcPath, `${savePath + saveName}_${idx}.png`, task.trim);
+                    let packerinfo = maxrectspacker_to_texturepacker(bin, urlClipPath, `${savePath + saveName}_${idx}.png`, task.trim);
                     packerInfoList.push(packerinfo);
                     idx++;
                 });

@@ -1,3 +1,4 @@
+import { IGLTFFile, IGLTFRefFileInfo } from "src/interface/gltf_files";
 import { formatUrl } from "../pi_path/path";
 import { IAccessor, IBuffer, IBufferView, IImage, ISampler, ITexture, ITextureInfo } from "./glTF2Interface";
 import { IGLTFNew, IGLTFOld, IMeshNew, IPITextureInfo, IPiTextureInfo } from "./interface";
@@ -55,15 +56,11 @@ export interface IVMesh {
 
 }
 
-export interface IVGLTFImages {
+export interface IVGLTF {
     /**
      * GLTF 中的图片信息列表
      */
     images: IVImage[],
-    /**
-     * GLTF 数据
-     */
-    gltf: IGLTFOld,
     /**
      * GLTF 路径
      */
@@ -85,7 +82,7 @@ export interface IGLTF2Viewer {
 
 }
 
-function textureInfo(images: IVImage[], textures: ITexture[], samplers: ISampler[], tex: IPITextureInfo) {
+function textureInfo(images: IVImage[], textures: ITexture[], samplers: ISampler[], tex: IPITextureInfo, withShaderSpeed: Set<string>) {
     if (tex) {
         if (tex.extras == undefined) { tex.extras = {} }
         if (tex.extras.scale === undefined) {
@@ -96,6 +93,10 @@ function textureInfo(images: IVImage[], textures: ITexture[], samplers: ISampler
         }
         let texInfo = textures[tex.index];
         let image = images[texInfo.source];
+
+        if (withShaderSpeed) {
+            withShaderSpeed.add(image.meta.uri);
+        }
 
         image.refNum += 1;
         image.usedTextureInfos.push(tex);
@@ -178,86 +179,129 @@ export class ImageInfoRecorder implements IImageInfoRecorder {
     }
 }
 
+export function analyGLTFRefFiles(url: string, gltf: IGLTFOld, map: Map<string, IGLTFRefFileInfo>) {
+    let result: IGLTFRefFileInfo = {
+        key: url.replace(/(.*\/)/, ""),
+        path: url,
+        bins: [],
+        images: [],
+    };
+
+    gltf.buffers.forEach((item, idx) => {
+        let file: IGLTFFile = {
+            key: item.uri,
+            path: formatUrl(url, item.uri),
+            size: 0,
+        };
+
+        result.bins[idx] = file;
+    });
+
+    gltf.images.forEach((item, idx) => {
+        let file: IGLTFFile = {
+            key: item.uri,
+            path: formatUrl(url, item.uri),
+            size: 0,
+        };
+
+        result.images[idx] = file;
+    });
+
+    map.set(url, result);
+}
+
+export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IVGLTF>, globalImageMap: Map<string, IGlobalImages>, withShaderSpeed: Set<string>) {
+    let result = <IVGLTF>{
+        images: [],
+        url
+    };
+    let images: IVImage[] = result.images;
+    gltf.images?.forEach((image, index) => {
+        let vimage: IVImage = {
+            meta: image,
+            usedTextureInfos: [],
+            usedTextureInfosClamp: [],
+            refNum: 0,
+            clampRefNum: 0,
+        };
+        images[index] = vimage;
+
+        let globalImages = globalImageMap.get(<string>image.uri);
+        if (globalImages == undefined) {
+            globalImages = {
+                images: [],
+                globalUrl: formatUrl(url, <string>image.uri),
+            };
+            globalImageMap.set(<string>image.uri, globalImages);
+        }
+        globalImages.images.push(vimage);
+    });
+
+    let textures: ITexture[] = <ITexture[]>gltf.textures;
+    let samplers: ISampler[] = <ISampler[]>gltf.samplers;
+
+    gltf.materials?.forEach((mat, index) => {
+        let matdata = mat.extensions?.PI_material;
+        {
+            let tex = mat.extensions?.PI_material.diffuseTexture;
+            if (matdata && (matdata.diffuseOU || matdata.diffuseOV)) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+            }
+        }
+        {
+            let tex = mat.extensions?.PI_material.opacityTexture;
+            if (matdata && (matdata.opacityOU || matdata.opacityOV)) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+            }
+        }
+        {
+            let tex = mat.extensions?.PI_material.emissionTexture;
+            if (matdata && (matdata.emissionOU || matdata.emissionOV)) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+            }
+        }
+        {
+            let tex = mat.extensions?.PI_material.maskTexture;
+            if (matdata && (matdata.maskFlowMode != undefined)) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+            }
+        }
+    });
+
+    map.set(url, result);
+}
+
 export class GLTF2Viewer {
-    public gltfImagesMap: Map<string, IVGLTFImages> = new Map();
+    /**
+     * Map<gltf路径, >
+     */
+    public gltfImagesMap: Map<string, IVGLTF> = new Map();
+    /**
+     * Map<gltf路径, >
+     */
+    public gltfFilesMap: Map<string, IGLTFRefFileInfo> = new Map();
     /**
      * Map<图片简名, 相同图片的信息列表>
      */
     public globalImages: Map<string, IGlobalImages> = new Map();
-
-    public gltfImages(recorder: IGLTFRecorder) {
-        recorder.forEach((url, gltf) => {
-            let gltfImages = <IVGLTFImages>{
-                images: [],
-                url,
-                gltf,
-            };
-            let images: IVImage[] = gltfImages.images;
-            gltf.images?.forEach((image, index) => {
-                let vimage: IVImage = {
-                    meta: image,
-                    usedTextureInfos: [],
-                    usedTextureInfosClamp: [],
-                    refNum: 0,
-                    clampRefNum: 0,
-                };
-                images[index] = vimage;
-
-                let globalImages = this.globalImages.get(<string>image.uri);
-                if (globalImages == undefined) {
-                    globalImages = {
-                        images: [],
-                        globalUrl: formatUrl(url, <string>image.uri),
-                    };
-                    this.globalImages.set(<string>image.uri, globalImages);
-                }
-                globalImages.images.push(vimage);
-            });
-
-            let textures: ITexture[] = <ITexture[]>gltf.textures;
-            let samplers: ISampler[] = <ISampler[]>gltf.samplers;
-
-            gltf.materials?.forEach((mat, index) => {
-                {
-                    let tex = mat.extensions?.PI_material.diffuseTexture;
-                    textureInfo(images, textures, samplers, <IPITextureInfo>tex);
-                }
-                {
-                    let tex = mat.extensions?.PI_material.opacityTexture;
-                    textureInfo(images, textures, samplers, <IPITextureInfo>tex);
-                }
-                {
-                    let tex = mat.extensions?.PI_material.emissionTexture;
-                    textureInfo(images, textures, samplers, <IPITextureInfo>tex);
-                }
-                {
-                    let tex = mat.extensions?.PI_material.maskTexture;
-                    textureInfo(images, textures, samplers, <IPITextureInfo>tex);
-                }
-            });
-
-            this.gltfImagesMap.set(url, gltfImages);
-        });
-    }
-    public analyImages(recorder: IImageInfoRecorder) {
-        let imageUrlList: Promise<ImageInfo>[] = [];
-        this.globalImages.forEach((info, url) => {
-            let clampRefNum = 0;
-            let refNum = 0;
-            info.images.forEach((item) => {
-                clampRefNum += item.clampRefNum;
-                refNum += item.refNum;
-            });
-            // if (clampRefNum > 0) {
-            //     imageUrlList.push(recorder.query(info.globalUrl));
-            // }
-            imageUrlList.push(
-                recorder.query(url, info.globalUrl).then((data) => {
-                    return data;
-                })
-            );
-        });
-
-        return Promise.all(imageUrlList);
-    }
+    /**
+     * Map<图片简名, >
+     */
+    public globalImageInfoMap: Map<string, ImageInfo> = new Map();
+    /**
+     * Map<图片简名, 图片全路径>
+     */
+    public globalImageSingleMap: Map<string, string> = new Map();
+    /**
+     * Map<图片简名, 图片全路径>
+     */
+    public globalImageWithShaderSpeed: Set<string> = new Set();
 }

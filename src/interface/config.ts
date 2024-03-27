@@ -12,6 +12,10 @@ export interface ITexturePackTask {
      */
     "square": boolean,
     /**
+     * 尺寸是否为2的幂次 - 与alignSize互斥, 同为true时使用 pot
+     */
+    "pot": boolean,
+    /**
      * Task 是否激活 tag 分析 - 具有相同 tag 的目标将合并到同一个文件
      * 暂未支持 - 当前可工具文件夹分类, 配置不同任务实现
      */
