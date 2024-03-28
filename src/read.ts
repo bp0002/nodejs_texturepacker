@@ -14,6 +14,48 @@ export function readJson(cfgPath: string): Promise<any> {
     });
 }
 
+export function readBin(cfgPath: string): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
+        fs.readFile(cfgPath, (err, data) => {
+            if (err) {
+                // console.error(err);
+                reject(err);
+            } else {
+                resolve(new Uint8Array(data));
+            }
+        });
+    });
+}
+
+export function readBinSync(cfgPath: string): Uint8Array {
+    if (fs.existsSync(cfgPath)) {
+        let data = fs.readFileSync(cfgPath);
+        if (data) {
+            return new Uint8Array(data)
+        } else {
+            return null;
+        }
+    } else {
+        return null;
+    }
+}
+
+export function sortNumberArray(a: ArrayLike<number>, b: ArrayLike<number>) {
+    if (a.length != b.length) {
+        return a.length - b.length;
+    } else {
+        let len = a.length;
+        let result: number;
+        for (let i = 0; i < len; i++) {
+            result = a[i] - b[i];
+            if (result != 0) {
+                break;
+            }
+        }
+        return result;
+    }
+}
+
 export function collectDirs(checkDirs: string[], dirList: [string, string][]) {
     if (checkDirs.length == 0) {
         return Promise.resolve(null);

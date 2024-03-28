@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as jpeg from "jpeg-js";
 import * as png from "pngjs";
 import { trimImage } from "./trim_image";
+import { resizeImage } from "./pi_image/image";
 
 export class ImageCollect implements IImageInfoRecorder {
     /**
@@ -14,7 +15,7 @@ export class ImageCollect implements IImageInfoRecorder {
     ) {
 
     }
-    query(key: string, url: string, trim?: boolean, logTrim?: boolean): Promise<ImageInfo> {
+    query(key: string, url: string, trim?: boolean, logTrim?: boolean, maxScaleFator: number = 1,): Promise<ImageInfo> {
         let info = this.imageContextInfos.get(url);
         if (info) {
             return Promise.resolve(info);
@@ -23,6 +24,10 @@ export class ImageCollect implements IImageInfoRecorder {
                 return new Promise((resolve, reject) => {
                     if (url.endsWith(".png")) {
                         trimImage(url, (err, [data, crop, w, h]) => {
+                            crop.left = Math.max(0, crop.left - 1);
+                            crop.right = Math.min(w, crop.right + 1);
+                            crop.top = Math.max(0, crop.top - 1);
+                            crop.bottom = Math.min(h, crop.bottom + 1);
                             let result: ImageInfo = {
                                 key,
                                 url,
@@ -77,18 +82,49 @@ export class ImageCollect implements IImageInfoRecorder {
                         fs.readFile(url, (err, jpegData) => {
                             if (jpegData) {
                                 var rawImageData = png.PNG.sync.read(jpegData);
-                                let result: ImageInfo = {
-                                    key,
-                                    url,
-                                    width: rawImageData.width,
-                                    height: rawImageData.height,
-                                    mode: 0,
-                                    fileSize: jpegData.byteLength,
-                                    modifyTime: 0,
-                                    data: rawImageData.data,
-                                };
-                                this.imageContextInfos.set(url, result);
-                                resolve(result);
+                                let factor = (rawImageData.data.length) / jpegData.byteLength;
+                                let scale = Math.pow(2, Math.round(Math.log2(Math.sqrt(factor))))
+                                scale = Math.min(maxScaleFator, scale);
+                                // console.log(`Resize: ${url} - ${scale} - ${factor}`);
+                                let srcWidth = rawImageData.width;
+                                let srcHeight = rawImageData.height;
+                                if (scale == 1 || (srcWidth >= 512 || srcHeight >= 512)) {
+                                    let result: ImageInfo = {
+                                        key,
+                                        url,
+                                        width: rawImageData.width,
+                                        height: rawImageData.height,
+                                        mode: 0,
+                                        fileSize: jpegData.byteLength,
+                                        modifyTime: 0,
+                                        data: rawImageData.data,
+                                    };
+                                    this.imageContextInfos.set(url, result);
+                                    resolve(result);
+                                } else {
+                                    let dstWidth = Math.round(srcWidth / scale);
+                                    let dstHeight = Math.round(srcHeight / scale);
+                                    console.log(`Resize: ${url} - ${srcWidth} - ${srcHeight} - ${dstWidth} - ${dstHeight} - ${factor}`)
+                                    resizeImage(rawImageData.data, srcWidth, srcHeight, dstWidth, dstHeight, (err, data) => {
+                                        if (err) {
+                                            console.error(err);
+                                            reject(err);
+                                        } else {
+                                            let result: ImageInfo = {
+                                                key,
+                                                url,
+                                                width: dstWidth,
+                                                height: dstHeight,
+                                                mode: 0,
+                                                fileSize: jpegData.byteLength,
+                                                modifyTime: 0,
+                                                data: data,
+                                            };
+                                            this.imageContextInfos.set(url, result);
+                                            resolve(result);
+                                        }
+                                    });
+                                }
                             } else {
                                 console.error(err);
                                 reject(err);
@@ -98,18 +134,50 @@ export class ImageCollect implements IImageInfoRecorder {
                         fs.readFile(url, (err, jpegData) => {
                             if (jpegData) {
                                 var rawImageData = jpeg.decode(jpegData);
-                                let result: ImageInfo = {
-                                    key,
-                                    url,
-                                    width: rawImageData.width,
-                                    height: rawImageData.height,
-                                    mode: 0,
-                                    fileSize: jpegData.byteLength,
-                                    modifyTime: 0,
-                                    data: rawImageData.data,
-                                };
-                                this.imageContextInfos.set(url, result);
-                                resolve(result);
+                                let factor = (rawImageData.data.length) / jpegData.byteLength;
+                                let scale = Math.pow(2, Math.round(Math.log2(Math.sqrt(factor))))
+                                scale = Math.min(maxScaleFator, scale);
+                                // console.log(`Resize: ${url} - ${scale} - ${factor}`);
+
+                                let srcWidth = rawImageData.width;
+                                let srcHeight = rawImageData.height;
+                                if (scale == 1 || (srcWidth >= 512 || srcHeight >= 512)) {
+                                    let result: ImageInfo = {
+                                        key,
+                                        url,
+                                        width: rawImageData.width,
+                                        height: rawImageData.height,
+                                        mode: 0,
+                                        fileSize: jpegData.byteLength,
+                                        modifyTime: 0,
+                                        data: rawImageData.data,
+                                    };
+                                    this.imageContextInfos.set(url, result);
+                                    resolve(result);
+                                } else {
+                                    let dstWidth = Math.round(srcWidth / scale);
+                                    let dstHeight = Math.round(srcHeight / scale);
+                                    console.log(`Resize: ${url} - ${srcWidth} - ${srcHeight} - ${dstWidth} - ${dstHeight} - ${factor}`)
+                                    resizeImage(rawImageData.data, srcWidth, srcHeight, dstWidth, dstHeight, (err, data) => {
+                                        if (err) {
+                                            console.error(err);
+                                            reject(err);
+                                        } else {
+                                            let result: ImageInfo = {
+                                                key,
+                                                url,
+                                                width: dstWidth,
+                                                height: dstHeight,
+                                                mode: 0,
+                                                fileSize: jpegData.byteLength,
+                                                modifyTime: 0,
+                                                data: data,
+                                            };
+                                            this.imageContextInfos.set(url, result);
+                                            resolve(result);
+                                        }
+                                    });
+                                }
                             } else {
                                 console.error(err);
                                 reject(err);

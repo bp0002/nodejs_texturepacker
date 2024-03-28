@@ -6,7 +6,6 @@ import * as ndArray from "ndarray-scratch";
 import { PNG } from "pngjs";
 import * as jpeg from "jpeg-js";
 import { base64ToImage } from "base64-to-image";
-import * as jimp from "jimp";
 import * as Jimp from "jimp";
 
 /**
@@ -48,14 +47,27 @@ export function saveUint8ArrayToPng(data: Buffer, width: number, height: number,
     // var optionalObj = { 'fileName': path, 'type': 'png' };
     // base64ToImage(data.toString('base64'), path, optionalObj);
 
-    let jimp = new Jimp({ data: data, width, height }, (err, image) => {
+    let jimp = new Jimp({ data: data, width, height }, (err) => {
         // cb(err);
         if (err) {
             cb(err);
         } else {
+            jimp.resize(width, height);
             jimp.write(path, cb)
         }
         // this image is 1280 x 768, pixels are loaded from the given buffer.
+    });
+}
+
+export function resizeImage(data: Uint8Array, srcWidth: number, srcHeight: number, dstWidth: number, dstHeight: number, cb: (err, data) => void) {
+
+    let jimp = new Jimp({ data: data, width: srcWidth, height: srcHeight }, (err) => {
+        // cb(err);
+        if (err) {
+            cb(err, null);
+        } else {
+            cb(null, new Uint8Array(jimp.resize(dstWidth, dstHeight).bitmap.data));
+        }
     });
 }
 

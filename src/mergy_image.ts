@@ -53,7 +53,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                             for (let i = 0; i < rh; i++) {
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
-                                    let ridx = (oy + j) * width + (ox + (rh - i));
+                                    let ridx = (oy + j) * width + (ox + (rh - i - 1));
                                     let r = image.data[idx * 3 + 0];
                                     let g = image.data[idx * 3 + 1];
                                     let b = image.data[idx * 3 + 2];
@@ -83,7 +83,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                             for (let i = 0; i < rh; i++) {
                                 for (let j = 0; j < rw; j++) {
                                     let idx = (dy + i) * sw + (dx + j);
-                                    let ridx = (oy + j) * width + (ox + (rh - i));
+                                    let ridx = (oy + j) * width + (ox + (rh - i - 1));
                                     let r = image.data[idx * 4 + 0];
                                     let g = image.data[idx * 4 + 1];
                                     let b = image.data[idx * 4 + 2];
@@ -120,7 +120,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
                             for (let row = 0; row < rh; row++) {
                                 for (let col = 0; col < rw; col++) {
                                     let idx = (dy + row) * sw + (dx + col);
-                                    let ridx = (oy + col) * width + (ox + (rh - row));
+                                    let ridx = (oy + col) * width + (ox + (rh - row - 1));
                                     let r = image.data[idx * 4 + 0];
                                     let g = image.data[idx * 4 + 1];
                                     let b = image.data[idx * 4 + 2];

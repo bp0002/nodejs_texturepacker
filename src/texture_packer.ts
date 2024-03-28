@@ -53,6 +53,8 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: 
         image,
     };
 
+    bin.rects.sort((a, b) => { return a.key > b.key ? 1 : -1; });
+    console.warn(bin.rects);
     bin.rects.forEach(element => {
         let key = element.key.replace(urlClip, "");
         result.frames[key] = {
@@ -141,7 +143,7 @@ export class TexturePacker {
                 }
                 if (path.endsWith(".png") || path.endsWith(".jpg")) {
                     promise.push(
-                        imageCollect.query(path, path, task.trim, task.logTrim)
+                        imageCollect.query(path, path, task.trim, task.logTrim, 1)
                     );
                 }
             });
@@ -170,7 +172,13 @@ export class TexturePacker {
 
         images.forEach((info, key) => {
             if (info) {
+                let keys = [];
                 info.imageContextInfos.forEach((item, key) => {
+                    keys.push(key);
+                });
+                keys.sort();
+                keys.forEach((key) => {
+                    let item = info.imageContextInfos.get(key);
                     let input: ICustomRect = {
                         key: key,
                         x: 0,
@@ -178,7 +186,7 @@ export class TexturePacker {
                         width: item.width,
                         height: item.height,
                         url: item.url,
-                        // rot: task.rotation,
+                        tag: key.replace(/\/[^\/]*$/, ""),
                         spriteSourceSize: { x: 0, y: 0, w: item.width, h: item.height },
                         sourceSize: { w: item.width, h: item.height },
                     };

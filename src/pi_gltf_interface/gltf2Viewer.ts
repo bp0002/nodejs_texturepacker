@@ -2,10 +2,18 @@ import { IGLTFFile, IGLTFRefFileInfo } from "src/interface/gltf_files";
 import { formatUrl } from "../pi_path/path";
 import { IAccessor, IBuffer, IBufferView, IImage, ISampler, ITexture, ITextureInfo } from "./glTF2Interface";
 import { IGLTFNew, IGLTFOld, IMeshNew, IPITextureInfo, IPiTextureInfo } from "./interface";
+import { readBin, readBinSync, sortNumberArray } from "../read";
 
 export interface IVBuffer {
     data: Uint8Array,
     meta: IBuffer,
+    gltfUrl: string,
+    idx: number,
+}
+
+export interface IVGLTFBuffers {
+    anim: Map<number, IVBuffer>,
+    geo: Map<number, IVBuffer>,
 }
 
 export interface IVBufferView {
@@ -209,7 +217,14 @@ export function analyGLTFRefFiles(url: string, gltf: IGLTFOld, map: Map<string, 
 
     map.set(url, result);
 }
-
+/**
+ * 
+ * @param url gltf 路径
+ * @param gltf gltf 数据
+ * @param map 
+ * @param globalImageMap 
+ * @param withShaderSpeed 
+ */
 export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IVGLTF>, globalImageMap: Map<string, IGlobalImages>, withShaderSpeed: Set<string>) {
     let result = <IVGLTF>{
         images: [],
@@ -242,9 +257,19 @@ export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IV
 
     gltf.materials?.forEach((mat, index) => {
         let matdata = mat.extensions?.PI_material;
+        let force = false;
+        {
+            let tex = mat.extensions?.PI_material.maskTexture;
+            if (matdata && (matdata.maskFlowMode != undefined)) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+                force = true;
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+            }
+        }
         {
             let tex = mat.extensions?.PI_material.diffuseTexture;
-            if (matdata && (matdata.diffuseOU || matdata.diffuseOV)) {
+            if (force || (matdata && (matdata.diffuseOU || matdata.diffuseOV))) {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
             } else {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
@@ -252,7 +277,7 @@ export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IV
         }
         {
             let tex = mat.extensions?.PI_material.opacityTexture;
-            if (matdata && (matdata.opacityOU || matdata.opacityOV)) {
+            if (force || (matdata && (matdata.opacityOU || matdata.opacityOV))) {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
             } else {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
@@ -260,15 +285,7 @@ export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IV
         }
         {
             let tex = mat.extensions?.PI_material.emissionTexture;
-            if (matdata && (matdata.emissionOU || matdata.emissionOV)) {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
-            } else {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
-            }
-        }
-        {
-            let tex = mat.extensions?.PI_material.maskTexture;
-            if (matdata && (matdata.maskFlowMode != undefined)) {
+            if (force || (matdata && (matdata.emissionOU || matdata.emissionOV))) {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
             } else {
                 textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
@@ -277,6 +294,96 @@ export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IV
     });
 
     map.set(url, result);
+}
+
+export function analyGLTFBuffer(url: string, gltf: IGLTFOld, gltfBuffers: Map<string, Map<number, IVBuffer>>, globalBuffersSizeKey: Map<number, IVBuffer[]>) {
+    gltf.buffers?.forEach((item, idx) => {
+        let map: Map<number, IVBuffer> = new Map();
+        gltfBuffers.set(url, map);
+        let info = {
+            gltfUrl: url,
+            data: undefined,
+            meta: item,
+            idx: idx,
+        };
+        map.set(idx, info);
+
+        let size = item.byteLength;
+        let list = globalBuffersSizeKey.get(size);
+        if (list == undefined) {
+            list = [];
+            globalBuffersSizeKey.set(size, list);
+        }
+        list.push(info);
+    });
+}
+
+export function loadGLTFBuffer(globalBuffersSizeKey: Map<number, IVBuffer[]>, singleBuffers: Map<string, string>, logSameBuffer: boolean) {
+    globalBuffersSizeKey.forEach((list, key) => {
+        if (list.length > 1) {
+            let temp: { idx: number, same: Set<number>, data: Uint8Array }[] = [];
+            list.forEach((item, idx) => {
+                let path = formatUrl(item.gltfUrl, item.meta.uri);
+                let data = readBinSync(path);
+                if (data) {
+                    item.data = data;
+                    let info: { idx: number, same: Set<number>, data: Uint8Array } = { idx, data, same: new Set() };
+                    info.same.add(idx);
+                    temp.push(info);
+                }
+            });
+
+            temp.sort((a, b) => {
+                let result = sortNumberArray(a.data, b.data);
+                if (result == 0) {
+                    a.same.add(b.idx);
+                    b.same.add(a.idx);
+                    a.same.forEach((idx) => {
+                        b.same.add(idx);
+                    });
+                    a.same = b.same;
+                }
+                return result;
+            });
+
+            {
+                let single: Map<number, Set<number>> = new Map();
+                temp.forEach((item) => {
+                    let flag = false;
+                    single.forEach((_, key) => {
+                        flag = flag || item.same.has(key);
+                    });
+                    if (flag == false) {
+                        single.set(item.idx, item.same);
+                    }
+                });
+
+                if (logSameBuffer) {
+                    console.log(`Single Buffer Count: ${single.size}`);
+                }
+                single.forEach((same, key) => {
+                    let temp = [];
+                    let first: IVBuffer;
+                    same.forEach(idx => {
+                        let item = list[idx];
+                        temp.push(`${item.gltfUrl}#${idx}#${item.meta.uri}`);
+                        if (first == undefined) {
+                            first = item;
+                            let path = formatUrl(item.gltfUrl, item.meta.uri);
+                            singleBuffers.set(path, item.meta.uri);
+                        } else {
+                            item.meta.uri = first.meta.uri;
+                        }
+                    });
+                    if (logSameBuffer) {
+                        console.log(temp);
+                    }
+                });
+            }
+        } else {
+            globalBuffersSizeKey.delete(key);
+        }
+    })
 }
 
 export class GLTF2Viewer {

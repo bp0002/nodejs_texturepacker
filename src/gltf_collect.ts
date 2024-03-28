@@ -1,4 +1,4 @@
-import { GLTF2Viewer, IGLTFRecorder, ImageInfo, analyGLTFImages, analyGLTFRefFiles } from "./pi_gltf_interface/gltf2Viewer";
+import { GLTF2Viewer, IGLTF2Viewer, IGLTFRecorder, IGlobalImages, ImageInfo, analyGLTFBuffer, analyGLTFImages, analyGLTFRefFiles, loadGLTFBuffer } from "./pi_gltf_interface/gltf2Viewer";
 import { IGLTFOld } from "./pi_gltf_interface/interface";
 import * as fs from "fs";
 import { readJson } from "./read";
@@ -77,183 +77,231 @@ export class GLTFCollect implements IGLTFRecorder {
     }
 }
 
-export function run(tasks: IGLTFTaskConfig[]) {
+export function run(configPath: string, tasks: IGLTFTaskConfig[]) {
     console.log(`ITexturePackTask 剩余: ${tasks.length}`);
 
     let task = tasks.pop();
     if (task == undefined) {
         return Promise.resolve(null);
     } else if (task.active == false) {
-        return run(tasks);
+        return run(configPath, tasks);
     } else {
         let srcPath = formatUrl(configPath, task.srcDir);
         let savePath = formatUrl(configPath, task.target);
         let collect = new GLTFCollect(srcPath);
         let gltfviewer = new GLTF2Viewer();
         let imgCollect = new ImageCollect();
+
         collect.collect().then(() => {
-            collect.forEach((url, gltf) => {
-                analyGLTFRefFiles(url, gltf, gltfviewer.gltfFilesMap);
-                analyGLTFImages(url, gltf, gltfviewer.gltfImagesMap, gltfviewer.globalImages, gltfviewer.globalImageWithShaderSpeed);
-            });
+            makeDir(savePath);
 
-            let infos = [];
-            gltfviewer.gltfImagesMap.forEach((item) => {
-                let temp = [];
-                infos.push(temp);
-                item.images.forEach((it) => {
-                    temp.push(it.meta.uri);
+            // Buffer 文件去重
+            {
+                bufferDeduplicate(collect, srcPath, savePath);
+            }
+
+            // 收集文件
+            {
+                collect.forEach((url, gltf) => {
+                    analyGLTFRefFiles(url, gltf, gltfviewer.gltfFilesMap);
                 });
-            });
-            fs.writeFile(`${savePath}${task.name}.json`, JSON.stringify(infos), "utf-8", () => {
-                console.log(`Task ${task.name} End.`);
-                // resolve(null)
-            });
+            }
 
-            let imageUrlList: Promise<null>[] = [];
-            gltfviewer.globalImages.forEach((info, key) => {
-                let clampRefNum = 0;
-                let refNum = 0;
-                info.images.forEach((item) => {
-                    clampRefNum += item.clampRefNum;
-                    refNum += item.refNum;
+            return imageDeduplicate(collect, gltfviewer, imgCollect, task, srcPath, savePath).then(() => {
+                collect.forEach((url, gltf) => {
+                    fs.writeFileSync(`${savePath}${url.replace(/(.*\/)/, "")}`, JSON.stringify(gltf), "utf-8");
                 });
-                imageUrlList.push(
-                    imgCollect.query(key, info.globalUrl, false, false).then((data) => {
-                        return null;
-                    })
-                );
-            });
-
-            return Promise.all(imageUrlList).then(() => {
-                makeDir(savePath);
-                {
-                    let tasktexture = {
-                        name: task.name,
-                        pot: task.pot,
-                        alignSize: task.alignSize,
-                        trim: false,
-                        rotation: false,
-                        srcDir: task.srcDir,
-                        target: task.target,
-                        maxHeight: task.maxHeight,
-                        maxWidth: task.maxWidth,
-                        active: true,
-                        square: true,
-                        useTag: true,
-                        border: task.border,
-                        padding: task.padding,
-                        logCollect: task.logCollect,
-                        logTrim: false,
-                        logMergy: task.logMergy
-                    };
-                    let map: Map<string, ImageCollect> = new Map();
-                    map.set(task.name, imgCollect);
-
-                    let bigMap: Map<string, ImageInfo> = new Map();
-
-                    imgCollect.imageContextInfos.forEach((item, key) => {
-                        if (item.width >= 512 && item.height >= 512) {
-                            imgCollect.imageContextInfos.delete(key);
-                            bigMap.set(key, item);
+                gltfviewer.gltfFilesMap.forEach((item) => {
+                    item.bins.forEach((bin) => {
+                        let dstpath = `${savePath}${bin.key}`;
+                        if (fs.existsSync(bin.path) == true && fs.existsSync(dstpath) == false) {
+                            fs.copyFileSync(bin.path, dstpath);
                         }
                     });
-
-                    gltfviewer.globalImageWithShaderSpeed.forEach((key) => {
-                        let info = gltfviewer.globalImages.get(key);
-                        let item = imgCollect.imageContextInfos.get(info.globalUrl);
-                        if (item) {
-                            imgCollect.imageContextInfos.delete(info.globalUrl);
-                            bigMap.set(info.globalUrl, item);
-                        } else if (bigMap.has(info.globalUrl)) {
-                            // console.log(`Again`);
-                        } else {
-                            console.log(`Image Not Found ContextInfo ${info.globalUrl}`);
-                        }
-                    });
-
-                    let atlas = TexturePacker.pack(tasktexture, map, "", savePath, map, false);
-
-                    GlobalAtlasManager.regist(atlas);
-                    let saveatlas = [];
-                    atlas.forEach((atlas) => {
-                        saveatlas.push(atlas);
-                    });
-
-                    return packCall(atlas, imgCollect.imageContextInfos, "", task.pot ? 1 : task.alignSize, task.logMergy).then(() => {
-                        fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(saveatlas), "utf-8", () => {
-                            console.log(`Task ${task.name} End.`);
-                            // resolve(null)
-                        });
-                        gltfviewer.globalImages.forEach((info, key) => {
-                            let atlas = GlobalAtlasManager.getAtlasByFrame(info.globalUrl);
-                            // if (info.globalUrl.endsWith("SeVJkop3q6o9Mim8CqN5Ts.png")) {
-                            //     console.warn("SeVJkop3q6o9Mim8CqN5Ts", atlas);
-                            // }
-                            if (atlas) {
-                                let uri = atlas.atlasImage.replace(/(.*\/)/, "");
-                                let frame = atlas.getFrame(info.globalUrl);
-                                if (frame) {
-                                    info.images.forEach((item) => {
-                                        // if (key == "FZPUQwQCCABMjX3Yoj1pux.png") {
-                                        //     console.error(`Image Key: ${key}, meta.uri: ${item.meta.uri}`);
-                                        // }
-                                        // console.error(`Image Key: ${key}, meta.uri: ${item.meta.uri}`);
-                                        item.meta.uri = uri;
-                                        item.usedTextureInfos.forEach((it) => {
-                                            if (it.scale == undefined) { it.scale = [1, 1] }
-                                            if (it.offset == undefined) { it.offset = [0, 0] }
-                                            it.scale[0] = it.scale[0] * frame[0];
-                                            it.scale[1] = it.scale[1] * frame[1];
-                                            it.offset[0] = it.offset[0] * frame[0] + frame[2];
-                                            it.offset[1] = it.offset[1] * frame[1] + frame[3];
-
-                                            if (it.extras) {
-                                                it = it.extras;
-                                                if (it.scale == undefined) { it.scale = [1, 1] }
-                                                if (it.offset == undefined) { it.offset = [0, 0] }
-                                                it.scale[0] = it.scale[0] * frame[0];
-                                                it.scale[1] = it.scale[1] * frame[1];
-                                                it.offset[0] = it.offset[0] * frame[0] + frame[2];
-                                                it.offset[1] = it.offset[1] * frame[1] + frame[3];
-                                            }
-                                        });
-                                    });
-                                }
-                            }
-                        });
-
-                        bigMap.forEach((item, url) => {
-                            // if (url.endsWith("SeVJkop3q6o9Mim8CqN5Ts.png")) {
-                            //     if (fs.existsSync(`${savePath}${item.key}`) == false) {
-                            //         fs.copyFileSync(url, `${savePath}${item.key}`);
-                            //         console.warn(`CopyFile: ${savePath}${item.key}`);
-                            //     } else {
-
-                            //         console.warn(`CopyFile Fail: ${savePath}${item.key}`);
-                            //     }
-                            // } else {
-                            if (fs.existsSync(`${savePath}${item.key}`) == false) {
-                                fs.copyFileSync(url, `${savePath}${item.key}`);
-                            }
-                            // }
-                        });
-                        collect.forEach((url, gltf) => {
-                            fs.writeFileSync(`${savePath}${url.replace(/(.*\/)/, "")}`, JSON.stringify(gltf), "utf-8");
-                        });
-                        gltfviewer.gltfFilesMap.forEach((item) => {
-                            item.bins.forEach((bin) => {
-                                fs.copyFileSync(bin.path, `${savePath}${bin.key}`);
-                            });
-                        });
-                    }).then(() => {
-                        return run(tasks);
-                    });
-                }
-
+                });
+                return run(configPath, tasks);
             });
         });
+
+        return run(configPath, tasks);
     }
+}
+
+function bufferDeduplicate(collect: GLTFCollect, srcPath: string, savePath: string) {
+    let gltfBuffers = new Map();
+    let gltfBuffersSizeKey = new Map();
+    let gltfSingleBuffers: Map<string, string> = new Map();
+    collect.forEach((url, gltf) => {
+        analyGLTFBuffer(url, gltf, gltfBuffers, gltfBuffersSizeKey);
+    });
+    loadGLTFBuffer(gltfBuffersSizeKey, gltfSingleBuffers, false);
+    gltfSingleBuffers.forEach((uri, srcpath) => {
+        let dstPath = `${savePath}${uri}`;
+        if (fs.existsSync(dstPath) == false) {
+            fs.copyFileSync(srcpath, dstPath);
+        }
+    });
+}
+
+function imageDeduplicate(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgCollect: ImageCollect, task: IGLTFTaskConfig, srcPath: string, savePath: string,) {
+    return imageInfoCollect(collect, gltfviewer, imgCollect, task, srcPath, savePath).then(() => {
+        {
+
+            let filteredImageMap: Map<string, ImageInfo> = imageFilter(imgCollect, gltfviewer.globalImageWithShaderSpeed, gltfviewer.globalImages);
+
+            let tasktexture = {
+                name: task.name,
+                pot: task.pot,
+                alignSize: task.alignSize,
+                trim: false,
+                rotation: false,
+                srcDir: task.srcDir,
+                target: task.target,
+                maxHeight: task.maxHeight,
+                maxWidth: task.maxWidth,
+                active: true,
+                square: true,
+                useTag: true,
+                border: task.border,
+                padding: task.padding,
+                logCollect: task.logCollect,
+                logTrim: false,
+                logMergy: task.logMergy
+            };
+            let map: Map<string, ImageCollect> = new Map();
+            map.set(task.name, imgCollect);
+            let atlas = TexturePacker.pack(tasktexture, map, "", savePath, map, false);
+
+            GlobalAtlasManager.regist(atlas);
+            let saveatlas = [];
+            atlas.forEach((atlas) => {
+                saveatlas.push(atlas);
+            });
+
+            return packCall(atlas, imgCollect.imageContextInfos, "", task.pot ? 1 : task.alignSize, task.logMergy).then(() => {
+                fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(saveatlas), "utf-8", () => {
+                    console.log(`Task ${task.name} End.`);
+                    // resolve(null)
+                });
+                resetTextureInfo(gltfviewer);
+
+                filteredImageMap.forEach((item, url) => {
+                    // if (url.endsWith("SeVJkop3q6o9Mim8CqN5Ts.png")) {
+                    //     if (fs.existsSync(`${savePath}${item.key}`) == false) {
+                    //         fs.copyFileSync(url, `${savePath}${item.key}`);
+                    //         console.warn(`CopyFile: ${savePath}${item.key}`);
+                    //     } else {
+
+                    //         console.warn(`CopyFile Fail: ${savePath}${item.key}`);
+                    //     }
+                    // } else {
+                    if (fs.existsSync(`${savePath}${item.key}`) == false) {
+                        fs.copyFileSync(url, `${savePath}${item.key}`);
+                    }
+                    // }
+                });
+            });
+        }
+    });
+}
+function imageInfoCollect(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgCollect: ImageCollect, task: IGLTFTaskConfig, srcPath: string, savePath: string) {
+    collect.forEach((url, gltf) => {
+        analyGLTFImages(url, gltf, gltfviewer.gltfImagesMap, gltfviewer.globalImages, gltfviewer.globalImageWithShaderSpeed);
+    });
+
+    let infos = [];
+    gltfviewer.gltfImagesMap.forEach((item) => {
+        let temp = [];
+        infos.push(temp);
+        item.images.forEach((it) => {
+            temp.push(it.meta.uri);
+        });
+    });
+    fs.writeFile(`${savePath}${task.name}.json`, JSON.stringify(infos), "utf-8", () => {
+        console.log(`Task ${task.name} End.`);
+        // resolve(null)
+    });
+
+    let imageUrlList: Promise<null>[] = [];
+    gltfviewer.globalImages.forEach((info, key) => {
+        let clampRefNum = 0;
+        let refNum = 0;
+        info.images.forEach((item) => {
+            clampRefNum += item.clampRefNum;
+            refNum += item.refNum;
+        });
+        imageUrlList.push(
+            imgCollect.query(key, info.globalUrl, false, false, task.maxScaleFator).then((data) => {
+                return null;
+            })
+        );
+    });
+
+    return Promise.all(imageUrlList);
+}
+function imageFilter(imgCollect: ImageCollect, globalImageWithShaderSpeed: Set<string>, globalImages: Map<string, IGlobalImages>): Map<string, ImageInfo> {
+    let filteredMap: Map<string, ImageInfo> = new Map();
+
+    imgCollect.imageContextInfos.forEach((item, key) => {
+        if (item.width >= 512 || item.height >= 512) {
+            imgCollect.imageContextInfos.delete(key);
+            filteredMap.set(key, item);
+        }
+    });
+
+    globalImageWithShaderSpeed.forEach((key) => {
+        let info = globalImages.get(key);
+        let item = imgCollect.imageContextInfos.get(info.globalUrl);
+        if (item) {
+            imgCollect.imageContextInfos.delete(info.globalUrl);
+            filteredMap.set(info.globalUrl, item);
+        } else if (filteredMap.has(info.globalUrl)) {
+            // console.log(`Again`);
+        } else {
+            console.log(`Image Not Found ContextInfo ${info.globalUrl}`);
+        }
+    });
+
+    return filteredMap;
+}
+function resetTextureInfo(gltfviewer: GLTF2Viewer) {
+    gltfviewer.globalImages.forEach((info, key) => {
+        let atlas = GlobalAtlasManager.getAtlasByFrame(info.globalUrl);
+        // if (info.globalUrl.endsWith("SeVJkop3q6o9Mim8CqN5Ts.png")) {
+        //     console.warn("SeVJkop3q6o9Mim8CqN5Ts", atlas);
+        // }
+        if (atlas) {
+            let uri = atlas.atlasImage.replace(/(.*\/)/, "");
+            let frame = atlas.getFrame(info.globalUrl);
+            if (frame) {
+                info.images.forEach((item) => {
+                    // if (key == "FZPUQwQCCABMjX3Yoj1pux.png") {
+                    //     console.error(`Image Key: ${key}, meta.uri: ${item.meta.uri}`);
+                    // }
+                    // console.error(`Image Key: ${key}, meta.uri: ${item.meta.uri}`);
+                    item.meta.uri = uri;
+                    item.usedTextureInfos.forEach((it) => {
+                        if (it.scale == undefined) { it.scale = [1, 1] }
+                        if (it.offset == undefined) { it.offset = [0, 0] }
+                        it.scale[0] = it.scale[0] * frame[0];
+                        it.scale[1] = it.scale[1] * frame[1];
+                        it.offset[0] = it.offset[0] * frame[0] + frame[2];
+                        it.offset[1] = it.offset[1] * frame[1] + frame[3];
+
+                        if (it.extras) {
+                            it = it.extras;
+                            if (it.scale == undefined) { it.scale = [1, 1] }
+                            if (it.offset == undefined) { it.offset = [0, 0] }
+                            it.scale[0] = it.scale[0] * frame[0];
+                            it.scale[1] = it.scale[1] * frame[1];
+                            it.offset[0] = it.offset[0] * frame[0] + frame[2];
+                            it.offset[1] = it.offset[1] * frame[1] + frame[3];
+                        }
+                    });
+                });
+            }
+        }
+    });
 }
 
 function packCall(configs: ITexturePackAtlas[], imageInfoMap: Map<string, ImageInfo>, srcPath: string, alignSize: number, logMergy: boolean) {
@@ -267,21 +315,4 @@ function packCall(configs: ITexturePackAtlas[], imageInfoMap: Map<string, ImageI
     } else {
         return Promise.resolve(null)
     }
-}
-
-let configPath = process.argv[2];
-let idx: number;
-if (process.argv[3] != undefined) {
-    idx = (<any>process.argv[3]) - 0;
-}
-if (configPath) {
-    readJson(configPath).then((val: IGLTFTaskConfig[]) => {
-        if (idx != undefined && !Number.isNaN(idx) && val.length > idx) {
-            return run([val[idx]]);
-        } else {
-            return run(val);
-        }
-    }).then(() => {
-        console.log(`Tasks Finish!!`);
-    });
 }

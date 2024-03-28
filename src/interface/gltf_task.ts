@@ -23,4 +23,8 @@ export interface IGLTFTaskConfig {
      * Task 合并时子图之间的间隔 - Example: 1
      */
     "padding": number,
+    /**
+     * 图片尺寸缩放时最大缩小倍数 1 | 2 | 4
+     */
+    "maxScaleFator": number,
 }
