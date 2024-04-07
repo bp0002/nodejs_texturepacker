@@ -54,7 +54,7 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: 
     };
 
     bin.rects.sort((a, b) => { return a.key > b.key ? 1 : -1; });
-    console.warn(bin.rects);
+    // console.warn(bin.rects);
     bin.rects.forEach(element => {
         let key = element.key.replace(urlClip, "");
         result.frames[key] = {
@@ -164,11 +164,12 @@ export class TexturePacker {
             square: task.square,
             allowRotation: task.rotation,
             tag: task.useTag,
-            border: task.border == undefined ? 1 : task.border,
+            border: task.border == undefined ? 0 : task.border,
         }; // Set packing options
         let packer = new MaxRectsPacker<ICustomRect>(task.maxWidth, task.maxHeight, task.padding, options);
         let inputs: ICustomRect[] = [];
         let saveName = task.name;
+        // console.log(`task`, task);
 
         images.forEach((info, key) => {
             if (info) {
@@ -177,6 +178,7 @@ export class TexturePacker {
                     keys.push(key);
                 });
                 keys.sort();
+                // console.log(`imageContextInfos keys`, keys);
                 keys.forEach((key) => {
                     let item = info.imageContextInfos.get(key);
                     let input: ICustomRect = {

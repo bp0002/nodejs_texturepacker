@@ -21,6 +21,10 @@ export interface ITexturePackTask {
      */
     "useTag": boolean,
     /**
+     * 标记的矩形将具有从属 bin，如果设置为“false”，则 Packer 将尝试将标记矩形放入同一个 bin 中
+     */
+    "exclusiveTag": boolean,
+    /**
      * Task 输出图片的尺寸对齐 - Example: 4, 4 为压缩纹理要求
      */
     "alignSize": number,

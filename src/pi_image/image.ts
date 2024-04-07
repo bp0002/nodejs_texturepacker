@@ -1,7 +1,7 @@
 
 import * as images from "images";
 import * as fs from "fs";
-import * as savePixels from "save-pixels";
+// import * as savePixels from "save-pixels";
 import * as ndArray from "ndarray-scratch";
 import { PNG } from "pngjs";
 import * as jpeg from "jpeg-js";

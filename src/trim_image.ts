@@ -1,5 +1,4 @@
-import * as getPixels from "get-pixels";
-import * as savePixels from "save-pixels";
+const getPixels = require("get-pixels");
 
 
 export function trimImage(filename: string, cb: (err: string, data: [Uint8Array, { top: number; right: number; bottom: number; left: number }, number, number]) => void, log: boolean) {

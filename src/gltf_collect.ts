@@ -147,24 +147,25 @@ function imageDeduplicate(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgColl
     return imageInfoCollect(collect, gltfviewer, imgCollect, task, srcPath, savePath).then(() => {
         {
 
-            let filteredImageMap: Map<string, ImageInfo> = imageFilter(imgCollect, gltfviewer.globalImageWithShaderSpeed, gltfviewer.globalImages);
+            let filteredImageMap: Map<string, ImageInfo> = imageFilter(imgCollect, gltfviewer.globalImageWithShaderSpeed, gltfviewer.globalImageTilloffAbnormal, gltfviewer.globalImages);
 
             let tasktexture = {
                 name: task.name,
                 pot: task.pot,
                 alignSize: task.alignSize,
-                trim: false,
                 rotation: false,
                 srcDir: task.srcDir,
                 target: task.target,
                 maxHeight: task.maxHeight,
                 maxWidth: task.maxWidth,
-                active: true,
-                square: true,
-                useTag: true,
+                active: task.active,
+                square: task.square,
+                useTag: task.useTag,
                 border: task.border,
                 padding: task.padding,
                 logCollect: task.logCollect,
+                exclusiveTag: !!task.exclusiveTag,
+                trim: false,
                 logTrim: false,
                 logMergy: task.logMergy
             };
@@ -206,7 +207,7 @@ function imageDeduplicate(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgColl
 }
 function imageInfoCollect(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgCollect: ImageCollect, task: IGLTFTaskConfig, srcPath: string, savePath: string) {
     collect.forEach((url, gltf) => {
-        analyGLTFImages(url, gltf, gltfviewer.gltfImagesMap, gltfviewer.globalImages, gltfviewer.globalImageWithShaderSpeed);
+        analyGLTFImages(url, gltf, gltfviewer.gltfImagesMap, gltfviewer.globalImages, gltfviewer.globalImageWithShaderSpeed, gltfviewer.globalImageTilloffAbnormal);
     });
 
     let infos = [];
@@ -239,7 +240,7 @@ function imageInfoCollect(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgColl
 
     return Promise.all(imageUrlList);
 }
-function imageFilter(imgCollect: ImageCollect, globalImageWithShaderSpeed: Set<string>, globalImages: Map<string, IGlobalImages>): Map<string, ImageInfo> {
+function imageFilter(imgCollect: ImageCollect, globalImageWithShaderSpeed: Set<string>, globalImageTilloffAbnormal: Set<string>, globalImages: Map<string, IGlobalImages>): Map<string, ImageInfo> {
     let filteredMap: Map<string, ImageInfo> = new Map();
 
     imgCollect.imageContextInfos.forEach((item, key) => {
@@ -250,6 +251,19 @@ function imageFilter(imgCollect: ImageCollect, globalImageWithShaderSpeed: Set<s
     });
 
     globalImageWithShaderSpeed.forEach((key) => {
+        let info = globalImages.get(key);
+        let item = imgCollect.imageContextInfos.get(info.globalUrl);
+        if (item) {
+            imgCollect.imageContextInfos.delete(info.globalUrl);
+            filteredMap.set(info.globalUrl, item);
+        } else if (filteredMap.has(info.globalUrl)) {
+            // console.log(`Again`);
+        } else {
+            console.log(`Image Not Found ContextInfo ${info.globalUrl}`);
+        }
+    });
+
+    globalImageTilloffAbnormal.forEach((key) => {
         let info = globalImages.get(key);
         let item = imgCollect.imageContextInfos.get(info.globalUrl);
         if (item) {

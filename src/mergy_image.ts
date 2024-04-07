@@ -28,7 +28,7 @@ export function mergyByTexturePacker(imageMap: Map<string, ImageInfo>, config: I
         config.meta.size.h = height;
 
         // let picture = images.createImage(width, height);
-        console.log(`mergyByTexturePacker: ${config.image} - ${config.meta.size.w} - ${config.meta.size.h} - savePath: ${savePath}`);
+        // console.log(`mergyByTexturePacker: ${config.image} - ${config.meta.size.w} - ${config.meta.size.h} - savePath: ${savePath}`);
 
         let data = Buffer.alloc(width * height * 4);
 

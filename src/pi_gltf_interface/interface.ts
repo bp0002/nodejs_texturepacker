@@ -256,23 +256,24 @@ export interface IMaterialDataOld extends IMaterialData {
 
     maskColor?: [number, number, number],
     maskTexture?: IPITextureInfo,
+    mask2Texture?: IPITextureInfo,
     maskLevel?: number,
 
     diffusePreAlpha?: number,
     opacityApplyRGB?: number,
-    
+
     // Mix Two Opacity
-    MixOUS ?: number,
-    MixOVS ?: number,
-    MixOUO ?: number,
-    MixOVO ?: number,
+    MixOUS?: number,
+    MixOVS?: number,
+    MixOUO?: number,
+    MixOVO?: number,
     MixOUSp?: number,
     MixOVSp?: number,
     MixOIns?: number,
-    MixCUS ?: number,
-    MixCVS ?: number,
-    MixCUO ?: number,
-    MixCVO ?: number,
+    MixCUS?: number,
+    MixCVS?: number,
+    MixCUO?: number,
+    MixCVO?: number,
     MixCIns?: number,
     MixCVal?: number,
 
@@ -355,18 +356,18 @@ export enum GLTFInterpolationType {
     "CUBICSPLINE" = 3,
     "PICUBICSPLINE" = 4,
 }
-export type TAnimationTargetPropertyID  = number;
-export type TAnimationTargetNodeIndex   = number;
-export type TAnimationSamplerIndex      = number;
-export type TAnimationInputByteoffset       = number;
-export type TAnimationInputCount            = number;
+export type TAnimationTargetPropertyID = number;
+export type TAnimationTargetNodeIndex = number;
+export type TAnimationSamplerIndex = number;
+export type TAnimationInputByteoffset = number;
+export type TAnimationInputCount = number;
 export type TAnimationInputBufferByteoffset = number;
-export type TAnimationInputBufferLength     = number;
-export type TAnimationOutputByteoffset          = number;
-export type TAnimationOutputCount               = number;
-export type TAnimationOutputBufferByteoffset    = number;
-export type TAnimationOutputBufferLength        = number;
-export type TAnimationSamplerInput  = [TAnimationInputCount, TAnimationInputCount, TAnimationInputBufferByteoffset, TAnimationInputBufferLength]; // number;
+export type TAnimationInputBufferLength = number;
+export type TAnimationOutputByteoffset = number;
+export type TAnimationOutputCount = number;
+export type TAnimationOutputBufferByteoffset = number;
+export type TAnimationOutputBufferLength = number;
+export type TAnimationSamplerInput = [TAnimationInputCount, TAnimationInputCount, TAnimationInputBufferByteoffset, TAnimationInputBufferLength]; // number;
 export type TAnimationSamplerOutput = [TAnimationOutputByteoffset, TAnimationOutputCount, TAnimationOutputBufferByteoffset, TAnimationOutputBufferLength]; // number;
 export type TAnimationSamplerInterpolation = number;
 export interface INewAnimationChannel extends GLTF2.IAnimationChannel {
@@ -487,7 +488,7 @@ export interface IPITextureInfo extends GLTF2.ITextureInfo {
     }
 }
 
-export interface IMainOpacityMaterial  extends IMaterialData {
+export interface IMainOpacityMaterial extends IMaterialData {
     alpha?: number,
     alphaCutOff?: number,
     alphaMode?: number,
@@ -509,7 +510,7 @@ export interface IMainOpacityMaterial  extends IMaterialData {
     // emissiveMapLevel?: number,
     // emissionOU?: number,
     // emissionOV?: number,
-    
+
     diffuseColor: [number, number, number, number],
     emissionColor: [number, number, number, number],
 }
@@ -601,7 +602,8 @@ export interface IDistortionUVMaterial extends IMaterialData {
     renderQueue?: number,
     diffuseTexture: IPiTextureInfo,
     diffuseLevel?: number,
-    maskTexture: IPiTextureInfo,
+    maskTexture?: IPiTextureInfo,
+    mask2Texture?: IPiTextureInfo,
     opacityTexture: IPiTextureInfo,
     opacityLevel?: number,
     distortionX: number,

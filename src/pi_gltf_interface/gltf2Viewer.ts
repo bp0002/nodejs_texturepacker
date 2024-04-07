@@ -1,4 +1,4 @@
-import { IGLTFFile, IGLTFRefFileInfo } from "src/interface/gltf_files";
+import { IGLTFFile, IGLTFRefFileInfo } from "../interface/gltf_files";
 import { formatUrl } from "../pi_path/path";
 import { IAccessor, IBuffer, IBufferView, IImage, ISampler, ITexture, ITextureInfo } from "./glTF2Interface";
 import { IGLTFNew, IGLTFOld, IMeshNew, IPITextureInfo, IPiTextureInfo } from "./interface";
@@ -90,17 +90,29 @@ export interface IGLTF2Viewer {
 
 }
 
-function textureInfo(images: IVImage[], textures: ITexture[], samplers: ISampler[], tex: IPITextureInfo, withShaderSpeed: Set<string>) {
+function textureInfo(images: IVImage[], textures: ITexture[], samplers: ISampler[], tex: IPITextureInfo, withShaderSpeed: Set<string>, tilloffAbnormal: Set<string>) {
     if (tex) {
+        let texInfo = textures[tex.index];
+        let image = images[texInfo.source];
+
         if (tex.extras == undefined) { tex.extras = {} }
         if (tex.extras.scale === undefined) {
             tex.extras.scale = [1, 1];
+        } else {
+            if (tex.extras.scale[0] > 1 || tex.extras.scale[1] > 1 || tex.extras.scale[0] < 0 || tex.extras.scale[1] < 0) {
+                tilloffAbnormal.add(image.meta.uri);
+            }
         }
         if (tex.extras.offset === undefined) {
             tex.extras.offset = [0, 0];
         }
-        let texInfo = textures[tex.index];
-        let image = images[texInfo.source];
+
+        if ((<IPiTextureInfo>tex).scale) {
+            let temp = (<IPiTextureInfo>tex);
+            if (temp.scale[0] > 1 || temp.scale[1] > 1 || temp.scale[0] < 0 || temp.scale[1] < 0) {
+                tilloffAbnormal.add(image.meta.uri);
+            }
+        }
 
         if (withShaderSpeed) {
             withShaderSpeed.add(image.meta.uri);
@@ -225,7 +237,7 @@ export function analyGLTFRefFiles(url: string, gltf: IGLTFOld, map: Map<string, 
  * @param globalImageMap 
  * @param withShaderSpeed 
  */
-export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IVGLTF>, globalImageMap: Map<string, IGlobalImages>, withShaderSpeed: Set<string>) {
+export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IVGLTF>, globalImageMap: Map<string, IGlobalImages>, withShaderSpeed: Set<string>, tilloffAbnormal: Set<string>) {
     let result = <IVGLTF>{
         images: [],
         url
@@ -261,34 +273,42 @@ export function analyGLTFImages(url: string, gltf: IGLTFOld, map: Map<string, IV
         {
             let tex = mat.extensions?.PI_material.maskTexture;
             if (matdata && (matdata.maskFlowMode != undefined)) {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed, tilloffAbnormal);
                 force = true;
             } else {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null, tilloffAbnormal);
+            }
+        }
+        {
+            let tex = mat.extensions?.PI_material.mask2Texture;
+            if (force) {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed, tilloffAbnormal);
+            } else {
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null, tilloffAbnormal);
             }
         }
         {
             let tex = mat.extensions?.PI_material.diffuseTexture;
             if (force || (matdata && (matdata.diffuseOU || matdata.diffuseOV))) {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed, tilloffAbnormal);
             } else {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null, tilloffAbnormal);
             }
         }
         {
             let tex = mat.extensions?.PI_material.opacityTexture;
             if (force || (matdata && (matdata.opacityOU || matdata.opacityOV))) {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed, tilloffAbnormal);
             } else {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null, tilloffAbnormal);
             }
         }
         {
             let tex = mat.extensions?.PI_material.emissionTexture;
             if (force || (matdata && (matdata.emissionOU || matdata.emissionOV))) {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, withShaderSpeed, tilloffAbnormal);
             } else {
-                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null);
+                textureInfo(images, textures, samplers, <IPITextureInfo>tex, null, tilloffAbnormal);
             }
         }
     });
@@ -408,7 +428,11 @@ export class GLTF2Viewer {
      */
     public globalImageSingleMap: Map<string, string> = new Map();
     /**
-     * Map<图片简名, 图片全路径>
+     * Set<图片简名>
      */
     public globalImageWithShaderSpeed: Set<string> = new Set();
+    /**
+     * Set<图片简名>
+     */
+    public globalImageTilloffAbnormal: Set<string> = new Set();
 }
