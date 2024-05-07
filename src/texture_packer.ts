@@ -81,7 +81,7 @@ export class TexturePacker {
     public get srcPath() {
         return formatUrl(this.configPath, this.task.srcDir);
     }
-    public run(): Promise<[ITexturePackAtlas[], Map<string, ImageInfo>]> {
+    public run(errors: string[]): Promise<[ITexturePackAtlas[], Map<string, ImageInfo>]> {
         let task = this.task;
         let srcPath = formatUrl(this.configPath, task.srcDir);
         let savePath = formatUrl(this.configPath, task.target);
@@ -101,7 +101,7 @@ export class TexturePacker {
                     let path = `${dir[0]}${dir[1]}/`;
 
                     promise.push(
-                        this.collectFolderImageInfos(this.task, path).then((collect) => {
+                        this.collectFolderImageInfos(this.task, path, errors).then((collect) => {
                             this.animations.set(key, collect);
                             collect.imageContextInfos.forEach((element, key) => {
                                 map.set(key, element);
@@ -111,23 +111,23 @@ export class TexturePacker {
                 });
 
                 return Promise.all(promise).then(() => {
-                    let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, true);
+                    let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, true, errors);
                     return [atlas, map];
                 });
             });
         } else {
-            return this.collectFolderImageInfos(this.task, srcPath).then((imageCollect) => {
+            return this.collectFolderImageInfos(this.task, srcPath, errors).then((imageCollect) => {
                 this.animations.set(srcPath, imageCollect);
                 imageCollect.imageContextInfos.forEach((element, key) => {
                     map.set(key, element);
                 });
-                let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, false);
+                let atlas = TexturePacker.pack(task, this.animations, srcPath, savePath, this.animations, false, errors);
                 return [atlas, map];
             });
         }
     }
 
-    private collectFolderImageInfos(task: ITexturePackTask, path: string): Promise<ImageCollect> {
+    private collectFolderImageInfos(task: ITexturePackTask, path: string, errors: string[]): Promise<ImageCollect> {
         let files: [string, string][] = [];
         let dirs: [string, string][] = [];
         let imageCollect = new ImageCollect();
@@ -152,12 +152,13 @@ export class TexturePacker {
                 console.log(`Collected: ${path} Collect Count: ${imageCollect.imageContextInfos.size}`);
                 return imageCollect
             }).catch((err) => {
-                console.error(`Collect Error: ${err}`);
+                errors.push(err)
+                // console.error(`Collect Error: ${err}`);
             });
         });
     }
 
-    public static pack(task: ITexturePackTask, images: Map<string, ImageCollect>, urlClipPath: string, savePath: string, animations: Map<string, ImageCollect>, anime: boolean) {
+    public static pack(task: ITexturePackTask, images: Map<string, ImageCollect>, urlClipPath: string, savePath: string, animations: Map<string, ImageCollect>, anime: boolean, errors: string[]) {
         const options: IOption = {
             smart: true,
             pot: task.pot,
@@ -224,7 +225,14 @@ export class TexturePacker {
                 });
                 packerInfoList.push(packerinfo);
             } else {
-                console.error(`Image Pack Error: Task ${task.name} Can't Combine To One Image !!!`);
+                let count = packer.bins.length;
+                let moreCount = 0;
+                for (let i = 1; i < count; i++) {
+                    moreCount += packer.bins[i].rects.length;
+                }
+                let err = `\x1B[31m Image Pack Error: Task < ${task.name} > Can't Combine To One Image !!! - All Rect: < ${moreCount + packer.bins[0].rects.length} >, Not Combined Rect: < ${moreCount} > \x1B[0m`;
+                console.error(err);
+                errors.push(err);
             }
         } else {
             if (packer.bins.length == 1 && anime) {
