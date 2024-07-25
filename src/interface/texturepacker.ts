@@ -35,5 +35,36 @@ export interface ITexturePackAtlas {
         size: { w: number, h: number },
         smartupdate: string,
     },
+    samplerMode?: number;
+    alphaMode?: number;
+    noMipmap?: boolean;
+    isInvertY?: boolean;
+    scale?: [number, number],
     image: string;
+}
+
+export type ITexturePackFrameCompact = [number, number, number, number, number, number, number, number, number, number, number, number, ];
+
+export interface ITexturePackAtlasCompact {
+    frames: {
+        [index: string]: ITexturePackFrameCompact,
+    },
+    animations?: {
+        [index: string]: string[],
+    },
+    meta: {
+        app: "https://www.codeandweb.com/texturepacker" | string,
+        version: string,
+        image: string,
+        format: string,
+        size: { w: number, h: number },
+        smartupdate: string,
+    },
+    image: string;
+    samplerMode?: number;
+    alphaMode?: number;
+    noMipmap?: boolean;
+    compact?: boolean;
+    isInvertY?: boolean;
+    scale?: [number, number],
 }

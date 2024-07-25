@@ -4,6 +4,15 @@ export interface ITexturePackTask {
      */
     "trim": boolean,
     /**
+     * 是否以rgb灰度计算 半透明信息
+     */
+    "transparencyFromGray"?: boolean,
+    /**
+     * 半透明 Trim 阈值 - 小于该值被剔除
+     * 0 - 255
+     */
+    "transparencyThreshold": number,
+    /**
      * 是否在装箱算法中使用 旋转支持 以获得更小的打包尺寸
      */
     "rotation": boolean,
@@ -90,6 +99,37 @@ export interface ITexturePackTask {
         /**
          * 使用子文件夹名称作为动画名称
          */
-        "subFolderNameAsAnimName": boolean
-    }
+        "subFolderNameAsAnimName": boolean;
+        /**
+         * 是否 压缩 数据
+         */
+        "optCompact": boolean;
+        /**
+         * 压缩 数据 时 是否压缩 帧名称 - 帧名称被替换为 0,1,2....
+         */
+        "optCompactFrameName": boolean;
+    },
+    /**
+     * 图片是否已被Y轴翻转
+     */
+    isInvertY?: boolean;
+    /**
+     * 采样模式
+     */
+    samplerMode?: number;
+    /**
+     * 半透明混合模式
+     * 1 : One - One
+     * 2 : SrcAlpha = OneMinusSrcAlpha
+     * 7 : One - OneMinusSrcAlpha
+     */
+    alphaMode?: number;
+    /**
+     * 是否不使用 mipmap - 默认 true
+     */
+    noMipmap?: boolean;
+    /**
+     * 显示缩放比例
+     */
+    displayScale?: [number, number],
 }

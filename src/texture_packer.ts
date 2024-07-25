@@ -1,6 +1,6 @@
 import { exec, spawn } from "child_process";
 import * as fs from "fs";
-import { collectDirs, collectFiles, readJson } from "./read";
+import { collectDirs, collectFiles } from "./read";
 import { Bin, IOption, MaxRectsPacker, Rectangle } from "maxrects-packer";
 import { ICustomRect, ITexturePackAtlas } from "./interface/texturepacker";
 import { ITexturePackTask } from "./interface/config";
@@ -39,7 +39,7 @@ export function texturepacker(exePath: string, spirtFolder: string, outputDir: s
     })
 }
 
-export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: string, image: string, trimmed: boolean): ITexturePackAtlas {
+export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, hashes: Map<string, string[]>, urlClip: string, image: string, trimmed: boolean, samplerMode?: number, alphaMode?: number, noMipmap?: boolean, isInvertY: boolean = false, scale?: [number, number]): ITexturePackAtlas {
     let result: ITexturePackAtlas = {
         frames: {},
         meta: {
@@ -53,17 +53,37 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, urlClip: 
         image,
     };
 
+    if (samplerMode) {
+        result.samplerMode = samplerMode;
+    }
+    if (alphaMode) {
+        result.alphaMode = alphaMode;
+    }
+    if (noMipmap != undefined) {
+        result.noMipmap = noMipmap;
+    }
+    if (scale != undefined) {
+        result.scale = scale;
+    }
+    result.isInvertY = isInvertY;
+
     bin.rects.sort((a, b) => { return a.key > b.key ? 1 : -1; });
     // console.warn(bin.rects);
     bin.rects.forEach(element => {
-        let key = element.key.replace(urlClip, "");
-        result.frames[key] = {
-            frame: { x: element.x, y: element.y, w: element.width, h: element.height },
-            rotated: element.rot == true,
-            trimmed: trimmed,
-            spriteSourceSize: element.spriteSourceSize,
-            sourceSize: element.sourceSize
-        }
+        let items = hashes.get(element.key);
+        // if (items.length > 1) {
+        //     console.log(...items);
+        // }
+        items.forEach((name) => {
+            let key = name.replace(urlClip, "");
+            result.frames[key] = {
+                frame: { x: element.x, y: element.y, w: element.width, h: element.height },
+                rotated: element.rot == true,
+                trimmed: trimmed,
+                spriteSourceSize: element.spriteSourceSize,
+                sourceSize: element.sourceSize
+            }
+        })
     });
 
     return <ITexturePackAtlas>result;
@@ -143,7 +163,7 @@ export class TexturePacker {
                 }
                 if (path.endsWith(".png") || path.endsWith(".jpg")) {
                     promise.push(
-                        imageCollect.query(path, path, task.trim, task.logTrim, 1)
+                        imageCollect.query(path, path, task.trim, task.logTrim, 1, task.transparencyThreshold)
                     );
                 }
             });
@@ -172,39 +192,74 @@ export class TexturePacker {
         let saveName = task.name;
         // console.log(`task`, task);
 
+        let hashes: Map<string, string[]> = new Map();
+
         images.forEach((info, key) => {
             if (info) {
                 let keys = [];
                 info.imageContextInfos.forEach((item, key) => {
                     keys.push(key);
+                    let items = hashes.get(item.hash);
+                    if (items == undefined) {
+                        items = [];
+                        hashes.set(item.hash, items);
+                        let input: ICustomRect = {
+                            key: item.hash,
+                            x: 0,
+                            y: 0,
+                            width: item.width,
+                            height: item.height,
+                            url: item.url,
+                            tag: key.replace(/\/[^\/]*$/, ""),
+                            spriteSourceSize: { x: 0, y: 0, w: item.width, h: item.height },
+                            sourceSize: { w: item.width, h: item.height },
+                        };
+                        if (item.crop) {
+                            input.spriteSourceSize.x = item.crop.x;
+                            input.spriteSourceSize.y = item.crop.y;
+                            input.spriteSourceSize.w = item.crop.w;
+                            input.spriteSourceSize.h = item.crop.h;
+                            input.width = item.crop.w;
+                            input.height = item.crop.h;
+                        }
+                        inputs.push(input);
+                    }
+                    items.push(key);
                 });
                 keys.sort();
+
                 // console.log(`imageContextInfos keys`, keys);
-                keys.forEach((key) => {
-                    let item = info.imageContextInfos.get(key);
-                    let input: ICustomRect = {
-                        key: key,
-                        x: 0,
-                        y: 0,
-                        width: item.width,
-                        height: item.height,
-                        url: item.url,
-                        tag: key.replace(/\/[^\/]*$/, ""),
-                        spriteSourceSize: { x: 0, y: 0, w: item.width, h: item.height },
-                        sourceSize: { w: item.width, h: item.height },
-                    };
-                    if (item.crop) {
-                        input.spriteSourceSize.x = item.crop.x;
-                        input.spriteSourceSize.y = item.crop.y;
-                        input.spriteSourceSize.w = item.crop.w;
-                        input.spriteSourceSize.h = item.crop.h;
-                        input.width = item.crop.w;
-                        input.height = item.crop.h;
-                    }
-                    inputs.push(input);
-                })
+
+                // hashes.forEach((items, key) => {
+                //     let item = info.imageContextInfos.get(items[0]);
+                //     console.log(items.length, key, items[0], item);
+                //     let input: ICustomRect = {
+                //         key: key,
+                //         x: 0,
+                //         y: 0,
+                //         width: item.width,
+                //         height: item.height,
+                //         url: item.url,
+                //         tag: items[0].replace(/\/[^\/]*$/, ""),
+                //         spriteSourceSize: { x: 0, y: 0, w: item.width, h: item.height },
+                //         sourceSize: { w: item.width, h: item.height },
+                //     };
+                //     if (item.crop) {
+                //         input.spriteSourceSize.x = item.crop.x;
+                //         input.spriteSourceSize.y = item.crop.y;
+                //         input.spriteSourceSize.w = item.crop.w;
+                //         input.spriteSourceSize.h = item.crop.h;
+                //         input.width = item.crop.w;
+                //         input.height = item.crop.h;
+                //     }
+                //     inputs.push(input);
+                // })
             }
         });
+        
+        // hashes.forEach((items, key) => {
+        //     console.log(items.length, key, ...items);
+        // });
 
         packer.addArray(inputs); // Start packing with input array
         packer.next(); // Start a new packer bin
@@ -212,7 +267,7 @@ export class TexturePacker {
         let packerInfoList: ITexturePackAtlas[] = [];
         if (task.subFolders) {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], urlClipPath, `${savePath + saveName}.png`, task.trim);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
                 packerinfo.animations = {};
                 animations.forEach((element, key) => {
                     let animation = [];
@@ -236,7 +291,7 @@ export class TexturePacker {
             }
         } else {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], urlClipPath, `${savePath + saveName}.png`, task.trim);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
                 packerinfo.animations = {};
                 animations.forEach((element, key) => {
                     let animation = [];
@@ -250,7 +305,7 @@ export class TexturePacker {
                 packerInfoList.push(packerinfo);
             } else {
                 packer.bins.forEach((bin: Bin<ICustomRect>) => {
-                    let packerinfo = maxrectspacker_to_texturepacker(bin, urlClipPath, `${savePath + saveName}_${idx}.png`, task.trim);
+                    let packerinfo = maxrectspacker_to_texturepacker(bin, hashes, urlClipPath, `${savePath + saveName}_${idx}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
                     packerInfoList.push(packerinfo);
                     idx++;
                 });

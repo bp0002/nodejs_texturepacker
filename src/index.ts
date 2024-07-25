@@ -11,6 +11,7 @@ import { ICustomRect, ITexturePackAtlas } from "./interface/texturepacker";
 import { ITexturePackTask } from "./interface/config";
 import { trimImage } from "./trim_image";
 import { mergyByTexturePacker } from "./mergy_image";
+import { opt } from "./optimize";
 
 function run(tasks: ITexturePackTask[], errors: string[]) {
     console.log(`ITexturePackTask 剩余: ${tasks.length}`);
@@ -33,10 +34,21 @@ function run(tasks: ITexturePackTask[], errors: string[]) {
 
             return packCall(configs, imageInfoMap, texturepacker, task.alignSize, task.logMergy).then(() => {
                 return new Promise((resolve, reject) => {
-                    fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(saveConfigs), "utf-8", () => {
-                        console.log(`Task ${task.name} End.`);
-                        resolve(null)
-                    });
+                    if (task.subFolders?.optCompact) {
+                        let optResult = [];
+                        saveConfigs.forEach((item) => {
+                            optResult.push(opt(item, task.subFolders.optCompactFrameName));
+                        });
+                        fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(optResult), "utf-8", () => {
+                            console.log(`Task ${task.name} End.`);
+                            resolve(null)
+                        });
+                    } else {
+                        fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(saveConfigs), "utf-8", () => {
+                            console.log(`Task ${task.name} End.`);
+                            resolve(null)
+                        });
+                    }
                 }).then(() => {
                     return run(tasks, errors);
                 });

@@ -5,6 +5,7 @@ import * as jpeg from "jpeg-js";
 import * as png from "pngjs";
 import { trimImage } from "./trim_image";
 import { resizeImage } from "./pi_image/image";
+import { sha256 } from "js-sha256";
 
 export class ImageCollect implements IImageInfoRecorder {
     /**
@@ -15,7 +16,7 @@ export class ImageCollect implements IImageInfoRecorder {
     ) {
 
     }
-    query(key: string, url: string, trim?: boolean, logTrim?: boolean, maxScaleFator: number = 1,): Promise<ImageInfo> {
+    query(key: string, url: string, trim?: boolean, logTrim?: boolean, maxScaleFator: number = 1, alphaTrim: number = 0, transparencyFromGray: boolean = false): Promise<ImageInfo> {
         let info = this.imageContextInfos.get(url);
         if (info) {
             return Promise.resolve(info);
@@ -42,11 +43,12 @@ export class ImageCollect implements IImageInfoRecorder {
                                     y: crop.top,
                                     w: crop.right - crop.left,
                                     h: crop.bottom - crop.top,
-                                }
+                                },
+                                hash: sha256(data)
                             };
                             this.imageContextInfos.set(url, result);
                             resolve(result);
-                        }, logTrim);
+                        }, logTrim, alphaTrim, transparencyFromGray);
                     } else if (url.endsWith(".jpg")) {
                         fs.readFile(url, (err, jpegData) => {
                             if (jpegData) {
@@ -65,7 +67,8 @@ export class ImageCollect implements IImageInfoRecorder {
                                         y: 0,
                                         w: rawImageData.width,
                                         h: rawImageData.height,
-                                    }
+                                    },
+                                    hash: sha256(rawImageData.data)
                                 };
                                 this.imageContextInfos.set(url, result);
                                 resolve(result);
@@ -98,6 +101,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                         fileSize: jpegData.byteLength,
                                         modifyTime: 0,
                                         data: rawImageData.data,
+                                        hash: sha256(rawImageData.data)
                                     };
                                     this.imageContextInfos.set(url, result);
                                     resolve(result);
@@ -119,6 +123,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                                 fileSize: jpegData.byteLength,
                                                 modifyTime: 0,
                                                 data: data,
+                                                hash: sha256(rawImageData.data)
                                             };
                                             this.imageContextInfos.set(url, result);
                                             resolve(result);
@@ -151,6 +156,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                         fileSize: jpegData.byteLength,
                                         modifyTime: 0,
                                         data: rawImageData.data,
+                                        hash: sha256(rawImageData.data)
                                     };
                                     this.imageContextInfos.set(url, result);
                                     resolve(result);
@@ -172,6 +178,7 @@ export class ImageCollect implements IImageInfoRecorder {
                                                 fileSize: jpegData.byteLength,
                                                 modifyTime: 0,
                                                 data: data,
+                                                hash: sha256(data)
                                             };
                                             this.imageContextInfos.set(url, result);
                                             resolve(result);

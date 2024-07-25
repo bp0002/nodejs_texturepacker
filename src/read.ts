@@ -2,6 +2,7 @@ import * as fs from "fs";
 
 export function readJson(cfgPath: string): Promise<any> {
     return new Promise((resolve, reject) => {
+        console.error(">>> " + cfgPath);
         fs.readFile(cfgPath, { encoding: 'utf-8' }, (err, data) => {
             if (err) {
                 // console.error(err);

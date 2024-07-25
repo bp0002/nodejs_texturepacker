@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc src/mergy.ts && tsc src/collect.ts",
+    "build": "tsc src/index.ts && tsc src/opt.ts && tsc src/from_packed_image.ts",
     "run": "node src/mergy.js && node src/collect.js",
     "build_collect": "tsc src/collect.ts",
     "run_collect": "node src/collect.js"
@@ -25,10 +25,12 @@
     "images": "git+http://ser.yinengyun.com:10082/tech/node-images.git#main",
     "jimp": "^0.22.12",
     "jpeg-js": "^0.4.4",
+    "js-sha256": "^0.11.0",
     "maxrects-packer": "^2.7.3",
     "ndarray-scratch": "^1.2.0",
     "pngjs": "^7.0.0",
     "save-pixels": "^2.3.6",
-    "trim-image": "^1.0.3"
+    "trim-image": "^1.0.3",
+    "typescript": "5.1"
   }
 }

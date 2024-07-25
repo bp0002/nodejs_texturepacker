@@ -150,6 +150,7 @@ export interface ImageInfo {
     mode: typeof IMAGE_EFFECT | typeof IMAGE_MODEL,
     data?: Uint8Array,
     crop?: { x: number, y: number, w: number, h: number },
+    hash: string;
 }
 
 export interface IImageMergyRect {

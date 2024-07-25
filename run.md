@@ -7,6 +7,15 @@ export interface ITexturePackTask {
      */
     "trim": boolean,
     /**
+     * 是否以rgb灰度计算 半透明信息
+     */
+    "transparencyFromGray"?: boolean,
+    /**
+     * 半透明 Trim 阈值 - 小于该值被剔除
+     * 0 - 255
+     */
+    "transparencyThreshold": number,
+    /**
      * 是否在装箱算法中使用 旋转支持 以获得更小的打包尺寸
      */
     "rotation": boolean,
@@ -85,16 +94,47 @@ export interface ITexturePackTask {
         /**
          * 使用子文件夹名称作为动画名称
          */
-        "subFolderNameAsAnimName": boolean
-    }
+        "subFolderNameAsAnimName": boolean;
+        /**
+         * 是否 压缩 数据
+         */
+        "optCompact": boolean;
+        /**
+         * 压缩 数据 时 是否压缩 帧名称 - 帧名称被替换为 0,1,2....
+         */
+        "optCompactFrameName": boolean;
+    },
+    /**
+     * 图片是否已被Y轴翻转
+     */
+    isInvertY?: boolean;
+    /**
+     * 采样模式
+     */
+    samplerMode?: number;
+    /**
+     * 半透明混合模式
+     * 1 : One - One
+     * 2 : SrcAlpha = OneMinusSrcAlpha
+     * 7 : One - OneMinusSrcAlpha
+     */
+    alphaMode?: number;
+    /**
+     * 是否不使用 mipmap - 默认 true
+     */
+    noMipmap?: boolean;
+    /**
+     * 显示缩放比例
+     */
+    displayScale?: [number, number],
 }
 ```
 ```json
 [
     {
-        "srcDir": "src/app/scene_res/res/scene_effect/",
+        "srcDir": "images/role2/",
         "target": "src/assets/",
-        "name": "scene_effect",
+        "name": "role2",
         "trim": true,
         "rotation": true,
         "alignSize": 4,
@@ -115,4 +155,119 @@ export interface ITexturePackTask {
 * 运行
 ```cmd
 tsc ../texturepacker/src/index.ts & node ../texturepacker/src/index.js texturepacker.json
+```
+
+## 已合成的行列图集转TexturePacker图集
+* 项目根目录下创建 texturepacker_from_packed.json , 声明任务列表
+
+```typescript
+interface IFromPackedTask {
+    /**
+     * 源图片相对路径
+     */
+    imageSource: string;
+    /**
+     * 图片存储相对路径
+     */
+    target: string;
+    /**
+     * 保持的图集名称
+     */
+    name: string;
+    /**
+     * 动画名称
+     */
+    animName: string;
+    /**
+     * 行数目
+     */
+    column: number;
+    /**
+     * 列数目
+     */
+    row: number;
+    /**
+     * 图片是否已被Y轴翻转
+     */
+    isInvertY: boolean;
+    /**
+     * 任务是否激活
+     */
+    active: true;
+    /**
+     * 任务是否压缩数据
+     */
+    opt: boolean;
+    /**
+     * 采样模式
+     */
+    samplerMode?: number;
+    /**
+     * 半透明混合模式
+     * 1 : One - One
+     * 2 : SrcAlpha = OneMinusSrcAlpha
+     * 7 : One - OneMinusSrcAlpha
+     */
+    alphaMode?: number;
+    /**
+     * 是否不使用 mipmap - 默认 true
+     */
+    noMipmap?: boolean;
+    /**
+     * 显示缩放比例
+     */
+    displayScale?: [number, number],
+}
+```
+```json
+[
+    {
+        "imageSource": "ImageMergy/YaoYaoYin_PoHun_Buff/SnFnXzpUyyzzoKhU3BYeKr.png",
+        "target": "src/assets/",
+        "name": "YaoYaoYin_PoHun_Buff",
+        "animName": "YaoYaoYin_PoHun_Buff",
+        "column": 5,
+        "row": 5,
+        "isInvertY": true,
+        "active": true,
+        "opt": false,
+        "alphaMode": 2,
+        "displayScale": [3.48513, 3.48513]
+    }
+]
+```
+* 运行
+```cmd
+tsc ../texturepacker/src/from_packed_image.ts & node ../texturepacker/src/from_packed_image.js texturepacker_from_packed.json
+```
+
+##  使用 subFolders 时, (标识将内部帧动画打包)
+* [文件夹结构] <image src="./example_folder.png">
+* [生成的atlas文件中的动画配置] <image src="./animation.png">
+* 项目中加载注册
+```typescript
+    // 加载并注册精灵图集信息
+    GlobalAtlasManager.load("assets/role2.atlas").then(() => {
+        // 该图集打包了动画所以可以注册 ModelPrefab, path 为空, fileName 为图集路径, 一般是构建时 target + name + ".png" 
+        // 
+        prefabPool.registPrefabCfg("role2", { path: "", fileName: "assets/role2.png", single: false, caches: 4 });
+        PrefabModelObjPool.registPrefabFactory("role2", ModelPrefab.Creation);
+        PrefabModelObjPool.registPrefabResFactory("role2", SpriteModel.Creation);
+    });
+```
+* 项目中使用
+```typescript
+    // 用作精灵
+    var test = wildScene.prefabPool.createPrefab("role2", "role2")
+    test.setAnim({ animName: "role2huikan1", isLoop: true })
+    test.setAnimeSpeed(0.5)
+    test.setPosition(0, 0, 0)
+    test.setScale(285, -285, 1);
+
+    // 打包了动画的
+    var test = wildScene.prefabPool.createPrefab("role2", "role2")
+    test.setAnim({ animName: "role2huikan1", isLoop: true })
+    test.setAnimeSpeed(0.5)
+    test.setPosition(0, 0, 0)
+    test.setScale(285, -285, 1);
 ```

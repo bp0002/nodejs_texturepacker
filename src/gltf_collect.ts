@@ -149,7 +149,7 @@ function imageDeduplicate(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgColl
 
             let filteredImageMap: Map<string, ImageInfo> = imageFilter(imgCollect, gltfviewer.globalImageWithShaderSpeed, gltfviewer.globalImageTilloffAbnormal, gltfviewer.globalImages);
 
-            let tasktexture = {
+            let tasktexture = <ITexturePackTask>{
                 name: task.name,
                 pot: task.pot,
                 alignSize: task.alignSize,
@@ -166,12 +166,13 @@ function imageDeduplicate(collect: GLTFCollect, gltfviewer: GLTF2Viewer, imgColl
                 logCollect: task.logCollect,
                 exclusiveTag: !!task.exclusiveTag,
                 trim: false,
+                transparencyThreshold: 1,
                 logTrim: false,
                 logMergy: task.logMergy
             };
             let map: Map<string, ImageCollect> = new Map();
             map.set(task.name, imgCollect);
-            let atlas = TexturePacker.pack(tasktexture, map, "", savePath, map, false);
+            let atlas = TexturePacker.pack(tasktexture, map, "", savePath, map, false, []);
 
             GlobalAtlasManager.regist(atlas);
             let saveatlas = [];

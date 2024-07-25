@@ -1,0 +1,37 @@
+[
+    {
+        "srcDir": "./example/anim/",
+        "target": "./dist/",
+        "name": "animTest",
+        "trim": true,
+        "rotation": true,
+        "alignSize": 4,
+        "border": 1,
+        "padding": 1,
+        "maxWidth": 2048,
+        "maxHeight": 2048,
+        "active": true,
+        "logTrim": false,
+        "logCollect": false,
+        "logMergy": false,
+        "subFolders": {
+            "subFolderNameAsAnimName": true
+        }
+    },
+    {
+        "srcDir": "./example/noanim/",
+        "target": "./dist/",
+        "name": "combine01",
+        "trim": true,
+        "rotation": true,
+        "alignSize": 4,
+        "border": 1,
+        "padding": 1,
+        "maxWidth": 2048,
+        "maxHeight": 2048,
+        "active": true,
+        "logTrim": false,
+        "logCollect": false,
+        "logMergy": false
+    }
+]
