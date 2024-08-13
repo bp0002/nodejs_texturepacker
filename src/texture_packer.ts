@@ -1,6 +1,6 @@
 import { exec, spawn } from "child_process";
 import * as fs from "fs";
-import { collectDirs, collectFiles } from "./read";
+import { collectDirs, collectFiles, readJson } from "./read";
 import { Bin, IOption, MaxRectsPacker, Rectangle } from "maxrects-packer";
 import { ICustomRect, ITexturePackAtlas } from "./interface/texturepacker";
 import { ITexturePackTask } from "./interface/config";
@@ -163,7 +163,7 @@ export class TexturePacker {
                 }
                 if (path.endsWith(".png") || path.endsWith(".jpg")) {
                     promise.push(
-                        imageCollect.query(path, path, task.trim, task.logTrim, 1, task.transparencyThreshold)
+                        imageCollect.query(path, path, task.trim, task.logTrim, 1, task.transparencyThreshold, task.transparencyFromGray)
                     );
                 }
             });
