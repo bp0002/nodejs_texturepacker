@@ -3,12 +3,12 @@ import { optAtlas } from "./optimize";
 import { readJson } from "./read";
 import * as fs from "fs";
 
-function run(tasks: [string, string, boolean][], errors: any[]) {
+export function run(tasks: [string, string, boolean, string?][], errors: any[]) {
     let task = tasks.pop();
     if (task == undefined) {
         return Promise.resolve(null);
     } else {
-        return optAtlas(task[0], task[1], task[2]).then(() => {
+        return optAtlas(task[0], task[1], task[2], task[3]).then(() => {
             return run(tasks, errors);
         })
     }

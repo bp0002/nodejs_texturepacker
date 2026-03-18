@@ -4,7 +4,7 @@ import * as jpeg from "jpeg-js";
 import * as png from "pngjs";
 import { ITexturePackAtlas, ITexturePackFrame } from "./interface/texturepacker";
 import { formatUrl } from "./pi_path/path";
-import { opt } from "./opt";
+import { opt } from "./optimize";
 
 
 interface IFromPackedTask {
@@ -154,7 +154,7 @@ export function fromPacked(task: IFromPackedTask) {
                 result.image = result.image.replace(/(.*)src\//, "");
 
                 if (task.opt) {
-                    let optResult = opt(result, false);
+                    let optResult = opt(result, false, undefined);
                     fs.copyFileSync(`${task.imageSource}`, `${task.target}${task.name}.png`);
                     fs.writeFile(`${task.target}${task.name}.atlas`, JSON.stringify(optResult), "utf-8", (e) => {
                         resolve(null)

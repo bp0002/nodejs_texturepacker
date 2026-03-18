@@ -36,6 +36,7 @@ export interface ITexturePackAtlas {
         smartupdate: string,
     },
     samplerMode?: number;
+    renderMode?: number | string;
     alphaMode?: number;
     noMipmap?: boolean;
     isInvertY?: boolean;

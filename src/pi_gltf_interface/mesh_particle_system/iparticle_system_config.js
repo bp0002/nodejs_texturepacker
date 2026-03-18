@@ -1,5 +1,5 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.EInterpolationGradienMode = exports.EInterpolationCurveMode = exports.RandomUnit = exports.DefaultValue = exports.TParamTextureSheet = exports.TParamRotationOverLifetime = exports.TParamSizeOverLifetime = exports.TParamColorOverLifetime = exports.TParamForceOverLifetime = exports.TParamLimitVelocityOverLifetime = exports.TParamVelocityOverLifetime = exports.TParamGravity = exports.TParamStartRotation = exports.TParamStartSize = exports.TParamStartLifetime = exports.TParamStartSpeed = exports.TParamStartColor = exports.TEmissionIndexBursts = exports.TEmissionIndexRate = exports.TInterpolateRandom = exports.TInterpolateTwoGradients = exports.TInterpolateGradient = exports.TInterpolateTwoColors = exports.TInterpolateColor = exports.TInterpolateTwoCurves = exports.TInterpolateCurve = exports.TInterpolateTwoConstants = exports.TInterpolateConstant = exports.TShapeArcModeBurstSpread = exports.TShapeArcModePingPong = exports.TShapeArcModeLoop = exports.TShapeArcModeRandom = exports.TShapeTypeRectangle = exports.TShapeTypeEdge = exports.TShapeTypeHemisphere = exports.TShapeTypeCircle = exports.TShapeTypeBox = exports.TShapeTypeSphere = exports.TShapeTypeCone = void 0;
 /**
  * 形状发射器类型
@@ -81,7 +81,7 @@ var RandomUnit;
 (function (RandomUnit) {
     RandomUnit[RandomUnit["One"] = 1] = "One";
     RandomUnit[RandomUnit["Three"] = 3] = "Three";
-})(RandomUnit = exports.RandomUnit || (exports.RandomUnit = {}));
+})(RandomUnit || (exports.RandomUnit = RandomUnit = {}));
 /**
  * 曲线插值模式
  */
@@ -90,20 +90,20 @@ var EInterpolationCurveMode;
     /**
      * 静态数值
      */
-    EInterpolationCurveMode[EInterpolationCurveMode["Constant"] = exports.TInterpolateConstant] = "Constant";
+    EInterpolationCurveMode[EInterpolationCurveMode["Constant"] = 1] = "Constant";
     /**
      * 静态数值随机 - XYZ 随机值相同
      */
-    EInterpolationCurveMode[EInterpolationCurveMode["TwoConstants"] = exports.TInterpolateTwoConstants] = "TwoConstants";
+    EInterpolationCurveMode[EInterpolationCurveMode["TwoConstants"] = 2] = "TwoConstants";
     /**
      * 曲线插值
      */
-    EInterpolationCurveMode[EInterpolationCurveMode["Curve"] = exports.TInterpolateCurve] = "Curve";
+    EInterpolationCurveMode[EInterpolationCurveMode["Curve"] = 4] = "Curve";
     /**
      * 曲线插值
      */
-    EInterpolationCurveMode[EInterpolationCurveMode["TwoCurves"] = exports.TInterpolateTwoCurves] = "TwoCurves";
-})(EInterpolationCurveMode = exports.EInterpolationCurveMode || (exports.EInterpolationCurveMode = {}));
+    EInterpolationCurveMode[EInterpolationCurveMode["TwoCurves"] = 8] = "TwoCurves";
+})(EInterpolationCurveMode || (exports.EInterpolationCurveMode = EInterpolationCurveMode = {}));
 /**
  * 渐变插值模式
  */
@@ -112,21 +112,21 @@ var EInterpolationGradienMode;
     /**
      * 静态数值
      */
-    EInterpolationGradienMode[EInterpolationGradienMode["Color"] = exports.TInterpolateColor] = "Color";
+    EInterpolationGradienMode[EInterpolationGradienMode["Color"] = 1] = "Color";
     /**
      * 静态数值随机 - XYZ 随机值相同
      */
-    EInterpolationGradienMode[EInterpolationGradienMode["TwoColors"] = exports.TInterpolateTwoColors] = "TwoColors";
+    EInterpolationGradienMode[EInterpolationGradienMode["TwoColors"] = 2] = "TwoColors";
     /**
      * 曲线插值
      */
-    EInterpolationGradienMode[EInterpolationGradienMode["Gradient"] = exports.TInterpolateGradient] = "Gradient";
+    EInterpolationGradienMode[EInterpolationGradienMode["Gradient"] = 4] = "Gradient";
     /**
      * 曲线插值
      */
-    EInterpolationGradienMode[EInterpolationGradienMode["TwoGradients"] = exports.TInterpolateTwoGradients] = "TwoGradients";
+    EInterpolationGradienMode[EInterpolationGradienMode["TwoGradients"] = 8] = "TwoGradients";
     /**
      * 曲线插值
      */
-    EInterpolationGradienMode[EInterpolationGradienMode["Random"] = exports.TInterpolateRandom] = "Random";
-})(EInterpolationGradienMode = exports.EInterpolationGradienMode || (exports.EInterpolationGradienMode = {}));
+    EInterpolationGradienMode[EInterpolationGradienMode["Random"] = 16] = "Random";
+})(EInterpolationGradienMode || (exports.EInterpolationGradienMode = EInterpolationGradienMode = {}));

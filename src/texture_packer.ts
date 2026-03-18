@@ -39,7 +39,7 @@ export function texturepacker(exePath: string, spirtFolder: string, outputDir: s
     })
 }
 
-export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, hashes: Map<string, string[]>, urlClip: string, image: string, trimmed: boolean, samplerMode?: number, alphaMode?: number, noMipmap?: boolean, isInvertY: boolean = false, scale?: [number, number]): ITexturePackAtlas {
+export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, hashes: Map<string, string[]>, urlClip: string, image: string, trimmed: boolean, samplerMode?: number, alphaMode?: number, noMipmap?: boolean, isInvertY: boolean = false, renderMode: number | string = undefined, scale?: [number, number]): ITexturePackAtlas {
     let result: ITexturePackAtlas = {
         frames: {},
         meta: {
@@ -53,10 +53,13 @@ export function maxrectspacker_to_texturepacker(bin: Bin<ICustomRect>, hashes: M
         image,
     };
 
-    if (samplerMode) {
+    if (renderMode != undefined) {
+        result.renderMode = renderMode;
+    }
+    if (samplerMode != undefined) {
         result.samplerMode = samplerMode;
     }
-    if (alphaMode) {
+    if (alphaMode != undefined) {
         result.alphaMode = alphaMode;
     }
     if (noMipmap != undefined) {
@@ -267,7 +270,7 @@ export class TexturePacker {
         let packerInfoList: ITexturePackAtlas[] = [];
         if (task.subFolders) {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.renderMode, task.displayScale);
                 packerinfo.animations = {};
                 animations.forEach((element, key) => {
                     let animation = [];
@@ -291,7 +294,7 @@ export class TexturePacker {
             }
         } else {
             if (packer.bins.length == 1 && anime) {
-                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
+                let packerinfo = maxrectspacker_to_texturepacker(packer.bins[0], hashes, urlClipPath, `${savePath + saveName}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.renderMode, task.displayScale);
                 packerinfo.animations = {};
                 animations.forEach((element, key) => {
                     let animation = [];
@@ -305,7 +308,7 @@ export class TexturePacker {
                 packerInfoList.push(packerinfo);
             } else {
                 packer.bins.forEach((bin: Bin<ICustomRect>) => {
-                    let packerinfo = maxrectspacker_to_texturepacker(bin, hashes, urlClipPath, `${savePath + saveName}_${idx}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.displayScale);
+                    let packerinfo = maxrectspacker_to_texturepacker(bin, hashes, urlClipPath, `${savePath + saveName}_${idx}.png`, task.trim, task.samplerMode, task.alphaMode, task.noMipmap, task.isInvertY, task.renderMode, task.displayScale);
                     packerInfoList.push(packerinfo);
                     idx++;
                 });

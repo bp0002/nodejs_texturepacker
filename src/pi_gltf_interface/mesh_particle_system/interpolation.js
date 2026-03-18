@@ -1,6 +1,6 @@
 "use strict";
 //#region 曲线数据属性值类型
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnimationKeyInterpolation = void 0;
 //#endregion
 //#region 曲线关键帧 各属性数据在 数组中的序号描述
@@ -34,7 +34,7 @@ var AnimationKeyInterpolation;
      * Do not interpolate between keys and use the start key value only. Tangents are ignored
      */
     AnimationKeyInterpolation[AnimationKeyInterpolation["STEP"] = 1] = "STEP";
-})(AnimationKeyInterpolation = exports.AnimationKeyInterpolation || (exports.AnimationKeyInterpolation = {}));
+})(AnimationKeyInterpolation || (exports.AnimationKeyInterpolation = AnimationKeyInterpolation = {}));
 //#region 曲线信息描述
 /**
  * 曲线 关键帧信息数组 在曲线信息 数据中的序号

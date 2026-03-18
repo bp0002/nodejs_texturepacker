@@ -37,7 +37,7 @@ function run(tasks: ITexturePackTask[], errors: string[]) {
                     if (task.subFolders?.optCompact) {
                         let optResult = [];
                         saveConfigs.forEach((item) => {
-                            optResult.push(opt(item, task.subFolders.optCompactFrameName));
+                            optResult.push(opt(item, task.subFolders.optCompactFrameName, task.subFolders.firstAnime));
                         });
                         fs.writeFile(`${savePath}${task.name}.atlas`, JSON.stringify(optResult), "utf-8", () => {
                             console.log(`Task ${task.name} End.`);

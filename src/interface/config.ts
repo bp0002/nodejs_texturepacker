@@ -108,6 +108,10 @@ export interface ITexturePackTask {
          * 压缩 数据 时 是否压缩 帧名称 - 帧名称被替换为 0,1,2....
          */
         "optCompactFrameName": boolean;
+        /**
+         * 将哪个动画放第一位, 这样初始化使用其第一帧
+         */
+        "firstAnime"?: string;
     },
     /**
      * 图片是否已被Y轴翻转
@@ -132,4 +136,8 @@ export interface ITexturePackTask {
      * 显示缩放比例
      */
     displayScale?: [number, number],
+    /**
+     * 渲染模式标记
+     */
+    renderMode?: number | string,
 }
